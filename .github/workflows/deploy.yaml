@@ -1,0 +1,31 @@
+name: Deploy to VPS by SSH
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - id: 'sshpass'
+      name: 'Instalace SSH klienta'
+      run: sudo apt-get install sshpass
+
+    - id: 'copy'
+      name: 'Nahrat soubory na SSH'
+      run: sshpass -p "${{ secrets.SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no -r ${PWD} root@80.211.208.69:/root
+
+    - id: 'build'
+      name: 'Install and Build'
+      run: sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no root@80.211.208.69 "cd ./moje-akordy && npm install && npm run build"
+    
+    - id: 'run'
+      name: 'Quit old and run new version'
+      run: sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no root@80.211.208.69 "cd ./moje-akordy && screen -S moje-akordy -X quit && screen -S moje-akordy -dm npm start"
+
+    - id: 'exit'
+      name: 'Ukonceni SSH spojeni'
+      run: sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no root@80.211.208.69 "exit"
