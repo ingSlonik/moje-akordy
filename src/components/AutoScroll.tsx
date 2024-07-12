@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const fontSize = 12;
+const fontSize = 12 * window.devicePixelRatio;
 // const frameRate = 60;
 
 /**
@@ -19,9 +19,7 @@ export default function AutoScroll({ speed = 1000 }: { speed: number }) {
         // const shift = Math.ceil(frameRate * fontSize / speed);
         const frameRate = speed / fontSize;
         const shift = 1;
-        console.log(frameRate)
         const int = setInterval(() => {
-            console.log(shift);
             window.scrollTo(0, window.scrollY + shift);
         }, frameRate);
         return () => clearInterval(int);
