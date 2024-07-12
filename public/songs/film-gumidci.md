@@ -1,5 +1,5 @@
 # Gumídci
-@ [F]ilmová Hudba
+@ Filmová Hudba
 
 [C]Rázní a [G]smělí a s [F]hrdými [C]čely,
 [F]chtějí se dělit o [G]zážitky své.
@@ -7,7 +7,7 @@
 [F]nebojme se, že jsou [G]nemluvové.
 
 // Refrén 1
-[C]Méďové, [G]skáčou jako míčky Amigumové,
+[C]Méďové, [G]skáčou jako míčky [Ami]gumové,
 [C]v příbězích, jež mají [F]úroveň,
 [G]Gumídci méďo[C]vé
 
@@ -17,7 +17,7 @@ Jsou hrdí a vědí, že silou medvědí,
 se kdykoliv budou za správnou věc bít.
 
 // Refrén 2
-[C]Méďové, [G]skáčou jako míčky Amigumové,
+[C]Méďové, [G]skáčou jako míčky [Ami]gumové,
 [C]v příbězích, jež mají [F]úroveň,
 [G]Gumídci méďo[C]vé,
 [G]Gumídci méďo[C]vé.

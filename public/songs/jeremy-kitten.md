@@ -2,6 +2,8 @@
 @ Jeremy Messersmith
 $ 3500 $
 
+Zpívám pouze se Zuzkou!
+
 // Intro
 [G] [C] [G] [C]
  
