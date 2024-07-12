@@ -11,7 +11,7 @@ export default async function Page({ params }: { params: { song: string } }) {
 
     const title = getLine("#", content);
     const artist = getLine("@", content);
-    const scrollSpeed = getLine("$", content);
+    const scrollSpeed = getLine("$", content) || "2000";
 
     const text = content
         .split("\n")
@@ -21,7 +21,7 @@ export default async function Page({ params }: { params: { song: string } }) {
 
     let firstLine = false;
     return <main>
-        {scrollSpeed && <AutoScroll speed={parseInt(scrollSpeed, 10)} />}
+        <AutoScroll speed={parseInt(scrollSpeed, 10)} />
         <Link href="/" className="back">← Zpět na seznam písní</Link>
         <div>ID: {songFile}</div>
         <h1 className="title">{title}</h1>
