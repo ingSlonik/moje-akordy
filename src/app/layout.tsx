@@ -12,14 +12,10 @@ const openSans = Open_Sans({ subsets: ["latin", "latin-ext"] });
 
 export const metadata: Metadata = {
   title: "Moje akordy",
-  description: "Tohle je zpěvník Fíly!!!",
+  description: "Osobní zpěvník Fíly! Obsahuje jak písně s akordy tak proložní básničkama. Jo taky auto scroll.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="cs">
       <Head>

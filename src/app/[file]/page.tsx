@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     return {
         title: `${title} - ${artist} | Moje písničky`,
-        description: `${title} - ${artist} \n ${text.slice(0, 100)}`,
+        description: `${title} - ${artist} \n${text.slice(0, 100)}`,
     };
 }
 
