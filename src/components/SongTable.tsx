@@ -26,7 +26,7 @@ export default function SongTable(props: { songs: Song[] }) {
         }
 
         return songs
-            .sort((a, b) => a.title.localeCompare(b.title));
+            .sort((a, b) => a.search.localeCompare(b.search));
     }, [props.songs, search, type]);
 
     function handleType(typ: "song" | "poem") {
