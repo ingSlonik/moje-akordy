@@ -2,24 +2,111 @@ html,
 body {
   color: black;
   background-color: white;
+  padding: 0px;
+  margin: 0px;
 }
 
-main {
+body {
   position: relative;
+  max-width: 800px;
+  margin: 0px auto;
+  padding-top: 64px;
+  padding-bottom: 64px;
+}
+
+nav {
+  position: fixed;
+  z-index: 5;
+  top: 0px;
+  left: 0px;
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.6);
+  border-bottom: 2px solid green;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+nav .content {
   max-width: 800px;
   margin: 0px auto;
 }
 
+nav a {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  color: black;
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+nav a span {
+  margin-left: 16px;
+  text-decoration: none;
+}
+
 .auto-scroll {
   position: fixed;
-  top: 8px;
+  z-index: 10;
+  top: 18px;
   right: 8px;
 }
 
-.back {
+.next-song {
+  position: fixed;
+  z-index: 9;
+  bottom: 8px;
+  right: 8px;
+  border: 1px solid rgba(64, 197, 64, 0.3);
+  padding: 4px 16px;
+  border-radius: 8px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.5);
+  background-color: rgba(64, 197, 64, 0.3);
+  transition: 0.3s;
+}
+
+.next-song:hover {
+  background-color: rgba(64, 197, 64, 0.6);
+  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+.hide {
+  display: none;
+}
+
+.show {
   display: block;
-  font-size: x-large;
-  margin-bottom: 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table tr {
+  transition: 0.3s;
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+table tr:hover {
+  background-color: rgba(64, 197, 64, 0.3);
+}
+
+table td,
+table th {
+  text-align: left;
+  padding: 2px 4px;
+  border: 1px solid gray;
+}
+
+.book-title {
+  margin-top: -16px;
+  padding: 0px;
+  color: gray;
+  font-style: italic;
+  font-size: smaller;
 }
 
 .song {
