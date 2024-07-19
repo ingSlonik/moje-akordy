@@ -8,7 +8,7 @@ import { Song } from "../../types";
 export default function SongTable(props: { songs: Song[] }) {
 
     const [search, setSearch] = useState("");
-    const [type, setType] = useState<Array<"song" | "poem">>(["song", "poem"]);
+    const [type, setType] = useState<Array<"song" | "poem">>(["song"]);
 
     const songs = useMemo(() => {
         let songs = props.songs
@@ -53,7 +53,7 @@ export default function SongTable(props: { songs: Song[] }) {
                 <tr>
                     <th>Název</th>
                     <th>Umělec</th>
-                    <th>Píseň / Báseň</th>
+                    <th>Typ</th>
                 </tr>
             </thead>
             <tbody>
