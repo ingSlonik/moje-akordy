@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { location } from "@/services/common";
 
 import { Song } from "../../types";
+import SongTable from "@/components/SongTable";
 
 export default async function Home() {
   const res = await fetch(location + '/api/song', { cache: "no-store" });
@@ -25,26 +25,6 @@ export default async function Home() {
       Všechno je to tady pro vás – a hlavně pro mě, abych se už konečně naučil ty akordy pořádně!
     </p>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Název</th>
-          <th>Umělec</th>
-          <th>Píseň / Báseň</th>
-        </tr>
-      </thead>
-      <tbody>
-        {songs.map(song => <tr key={song.file}>
-          <td>
-            <Link href={`/${song.file}${song.type === "poem" ? `/${encodeURIComponent(song.title)}` : ""}`}>
-              {song.title}
-              {song.bookTitle && ` (${song.bookTitle})`}
-            </Link>
-          </td>
-          <td>{song.artist}</td>
-          <td>{song.type === "song" ? "Píseň" : "Báseň"}</td>
-        </tr>)}
-      </tbody>
-    </table>
+    <SongTable songs={songs} />
   </main>;
 }
