@@ -1,4 +1,4 @@
-import { readFile, readdir } from "fs/promises";
+import { readFile, readdir, stat } from "fs/promises";
 import { resolve, parse } from "path"
 import { Song } from "../../../../types";
 
@@ -9,17 +9,19 @@ export async function GET() {
     const songs: Song[] = [];
     const filesSongs = await readdir(dirSongs, "utf8");
     for (let file of filesSongs) {
+
         const { name, ext } = parse(file);
         if (ext !== ".md")
             continue;
 
         const content = await readFile(resolve(dirSongs, file), "utf8");
+        const statFile = await stat(file);
 
         const title = getLine("#", content);
         const artist = getLine("@", content);
 
         if (title && artist)
-            songs.push({ file: name, type: "song", title, artist });
+            songs.push({ file: name, type: "song", title, artist, lastModified: statFile.mtime.toString() });
         else
             console.log("ERROR FILE:", file);
     }
@@ -31,6 +33,7 @@ export async function GET() {
             continue;
 
         const content = await readFile(resolve(dirPoems, file), "utf8");
+        const statFile = await stat(resolve(dirPoems, file));
 
         const bookTitle = getLine("#", content);
         const artist = getLine("@", content);
@@ -46,7 +49,7 @@ export async function GET() {
             if (title) {
                 if (title === "...")
                     title = poem.split("\n")[1].trim();
-                songs.push({ file: name, type: "poem", title, artist, bookTitle });
+                songs.push({ file: name, type: "poem", title, artist, bookTitle, lastModified: statFile.mtime.toString() });
             }
         }
     }
