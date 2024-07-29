@@ -1,7 +1,7 @@
 {
-    "name": "Moje akordy",
-    "short_name": "Moje akordy",
-    "description": "Osobní zpěvník Fíly! Obsahuje jak písně s akordy tak proložní básničkama. Jo taky auto scroll.",
+    "name": "Fílův zpěvník",
+    "short_name": "Fílův zpěvník",
+    "description": "Osobní zpěvník Fíly! Obsahuje jak písně s akordy tak proložní básničkama. Je úplně bez reklam! A má auto scroll!",
     "start_url": "/",
     "icons": [
         {

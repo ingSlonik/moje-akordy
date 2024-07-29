@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { title, artist, text } = await getSong(params);
 
     return {
-        title: `${title} - ${artist} | Moje písničky`,
+        title: `${title} - ${artist} | Fílův zpěvník`,
         description: `${title} - ${artist} \n${text.slice(0, 100)}`,
     };
 }

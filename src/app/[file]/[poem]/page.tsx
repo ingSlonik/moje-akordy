@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { title, artist, bookTitle, text } = await getPoem(params);
 
     return {
-        title: `${title} - ${artist} (${bookTitle}) | Moje písničky`,
+        title: `${title} - ${artist} (${bookTitle}) | Fílův zpěvník`,
         description: `${title} - ${artist} (${bookTitle}) \n${text.slice(0, 100)}`,
     };
 }

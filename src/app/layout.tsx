@@ -11,8 +11,8 @@ import Link from "next/link";
 const openSans = Open_Sans({ subsets: ["latin", "latin-ext"] });
 
 export const metadata: Metadata = {
-  title: "Moje akordy",
-  description: "Osobní zpěvník Fíly! Obsahuje jak písně s akordy tak proložní básničkama. Jo taky auto scroll.",
+  title: "Fílův zpěvník",
+  description: "Osobní zpěvník Fíly! Obsahuje jak písně s akordy tak proložní básničkama. Je úplně bez reklam! A má auto scroll!",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -29,11 +29,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <div className="content">
             <Link href="/">
               <Image className="logo" alt="Moje akordy Logo" src={logo} width={64} height={64} />
-              <span>Moje akordy</span>
+              <span>Fílův zpěvník</span>
             </Link>
           </div>
         </nav>
+
         {children}
+
       </body>
     </html>
   );
