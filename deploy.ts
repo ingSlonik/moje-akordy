@@ -42,13 +42,11 @@ async function deploy() {
     console.log(`✓ All files are copied.\n`);
 
     console.log(`Installing dependencies...`);
-    const responseInstall = await sshExec(ssh, "npm install", "Failed to install dependencies.");
-    console.log(responseInstall.stdout.split("\n").join("\n    | "));
+    await sshExec(ssh, "npm install", "Failed to install dependencies.");
     console.log(`✓ Dependencies are installed.\n`);
 
     console.log(`Building project...`);
-    const responseBuild = await sshExec(ssh, "npm install", "Failed to build project.");
-    console.log(responseBuild.stdout.split("\n").join("\n    | "));
+    await sshExec(ssh, "npm run build", "Failed to build project.");
     console.log(`✓ Build project.\n`);
 
     const responseScreenList = await sshExec(ssh, "screen -list");
@@ -66,9 +64,9 @@ async function deploy() {
     console.log(`✓ New version is running on new screen "${screenName}".\n`);
 
     ssh.dispose();
-    console.log(`✓ SSH connection is closed.\n\n`);
+    console.log(`✓ SSH connection is closed.\n`);
 
-    console.log(`\n\n--------------------------\n✓ Successfully deployed.`);
+    console.log(`------------------------\n✓ Successfully deployed.`);
 }
 
 async function sshExec(ssh: NodeSSH, command: string, error?: string): Promise<SSHExecCommandResponse> {
@@ -79,6 +77,7 @@ async function sshExec(ssh: NodeSSH, command: string, error?: string): Promise<S
         throw new Error(error);
     }
 
+    console.log(response.stdout.split("\n").join("\n    | "));
     return response;
 }
 
