@@ -1,4 +1,4 @@
-import { NodeSSH } from 'node-ssh';
+import { NodeSSH, SSHExecCommandResponse } from 'node-ssh';
 
 import { lstat, readdir } from 'fs/promises';
 import { relative, resolve } from 'path';
@@ -29,48 +29,55 @@ async function deploy() {
     console.log(`✓ Connected to SSH server.`);
 
     const filesToCopy = await getFiles(path);
-    console.log(`✓ Found ${filesToCopy.length} files to copy.`);
+    console.log(`\n✓ Found ${filesToCopy.length} files to copy.`);
 
     for (const file of filesToCopy) {
         const relativePath = relative(path, file);
-        console.log(`    Copying ${relativePath}`);
-        // TODO: ssh.putDirectory
+        const pathTo = resolve(sshPath, relativePath);
+        console.log(`    Copying ${file} -> ${pathTo}`);
+        // TODO: ssh.putDirectory when not exists
         await ssh.putFile(file, resolve(sshPath, relativePath));
     }
     console.log(`✓ All files are copied.`);
 
-    console.log(`Installing dependencies...`);
-    const responseInstall = await ssh.execCommand("npm install", { cwd: sshPath });
-    if (responseInstall.code !== 0) throw new Error("Failed to install dependencies.");
+    console.log(`\nInstalling dependencies...`);
+    const responseInstall = await sshExec(ssh, "npm install", "Failed to install dependencies.");
     console.log(responseInstall.stdout.split("\n").join("\n    | "));
     console.log(`✓ Dependencies are installed.`);
 
-    console.log(`Building project...`);
-    const responseBuild = await ssh.execCommand("npm install", { cwd: sshPath });
-    if (responseBuild.code !== 0) throw new Error("Failed to build project.");
+    console.log(`\nBuilding project...`);
+    const responseBuild = await sshExec(ssh, "npm install", "Failed to build project.");
     console.log(responseBuild.stdout.split("\n").join("\n    | "));
     console.log(`✓ Build project.`);
 
-    const responseScreenList = await ssh.execCommand("screen -list", { cwd: sshPath });
+    const responseScreenList = await sshExec(ssh, "screen -list");
     const isScreenRunning = responseScreenList.stdout.includes(screenName);
 
     if (isScreenRunning) {
-        console.log(`✓ Screen ${screenName} is running.`);
-        const responseScreenStop = await ssh.execCommand("screen -S moje-akordy -X quit", { cwd: sshPath });
-        if (responseScreenStop.code !== 0) throw new Error("Screen is not possible to stop.");
+        console.log(`\ni Screen ${screenName} is running.`);
+        await sshExec(ssh, `screen -S ${screenName} -X quit`, "Screen is not possible to stop.");
         console.log(`✓ Screen ${screenName} is stopped.`);
     } else {
-        console.log(`✓ Screen ${screenName} is not running.`);
+        console.log(`\ni Screen ${screenName} is not running.`);
     }
 
-    const responseStart = await ssh.execCommand("screen -S moje-akordy -dm npm start", { cwd: sshPath });
-    if (responseStart.code !== 0) throw new Error("Failed to start project.");
-    console.log(`✓ New version is running.`);
+    await sshExec(ssh, `screen -S ${screenName} -dm npm start`, "Failed to start project.");
+    console.log(`\n✓ New version is running.`);
 
     ssh.dispose();
-    console.log(`✓ SSH connection is closed.`);
+    console.log(`\n✓ SSH connection is closed.`);
 
     console.log(`\n\n✓ Successfully deployed.`);
+}
+
+async function sshExec(ssh: NodeSSH, command: string, error?: string): Promise<SSHExecCommandResponse> {
+    const response = await ssh.execCommand(command, { cwd: sshPath });
+    if (response.code !== 0) {
+        console.log(`Code: ${response.code}\n${response.stderr.split("\n").join("\n    | ")}`);
+        throw new Error(error);
+    }
+
+    return response;
 }
 
 async function getFiles(path: string) {
