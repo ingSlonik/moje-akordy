@@ -20,3 +20,6 @@ jobs:
     - id: 'deploy'
       name: 'Run deploy script'
       run: npm run deploy
+      env:
+        CI: true
+        SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
