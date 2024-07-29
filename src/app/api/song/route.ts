@@ -1,5 +1,6 @@
 import { readFile, readdir, stat } from "fs/promises";
 import { resolve, parse } from "path"
+
 import { Song } from "../../../../types";
 
 const dirSongs = resolve(process.cwd(), "public", "songs");
@@ -14,8 +15,9 @@ export async function GET() {
         if (ext !== ".md")
             continue;
 
-        const content = await readFile(resolve(dirSongs, file), "utf8");
-        const statFile = await stat(file);
+        const filePath = resolve(dirSongs, file);
+        const content = await readFile(filePath, "utf8");
+        const statFile = await stat(filePath);
 
         const title = getLine("#", content);
         const artist = getLine("@", content);
@@ -32,8 +34,9 @@ export async function GET() {
         if (ext !== ".md")
             continue;
 
-        const content = await readFile(resolve(dirPoems, file), "utf8");
-        const statFile = await stat(resolve(dirPoems, file));
+        const filePath = resolve(dirPoems, file);
+        const content = await readFile(filePath, "utf8");
+        const statFile = await stat(filePath);
 
         const bookTitle = getLine("#", content);
         const artist = getLine("@", content);
