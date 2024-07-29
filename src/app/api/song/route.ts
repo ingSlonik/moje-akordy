@@ -23,7 +23,7 @@ export async function GET() {
         const artist = getLine("@", content);
 
         if (title && artist)
-            songs.push({ file: name, type: "song", title, artist, lastModified: statFile.mtime.toString() });
+            songs.push({ file: name, type: "song", title, artist, lastModified: statFile.mtime.toISOString() });
         else
             console.log("ERROR FILE:", file);
     }
@@ -52,7 +52,7 @@ export async function GET() {
             if (title) {
                 if (title === "...")
                     title = poem.split("\n")[1].trim();
-                songs.push({ file: name, type: "poem", title, artist, bookTitle, lastModified: statFile.mtime.toString() });
+                songs.push({ file: name, type: "poem", title, artist, bookTitle, lastModified: statFile.mtime.toISOString() });
             }
         }
     }
