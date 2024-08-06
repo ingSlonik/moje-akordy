@@ -1,5 +1,6 @@
 # Bláznova Ukolébavka
 @ Country
+% 20
 
 [G]Máš, má o večko, [D]dávno spát i [C]píseň ptáků [G]končí,
 [G]kvůli nám přestal [D]vítr vát, jen [C]můra zírá [G]zvenčí,

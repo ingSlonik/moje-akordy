@@ -1,5 +1,6 @@
 # Pažitka
 @ Xavier Baumaxa
+% 20
 
 [A], [C#mi], [Cmi], [F#mi], [E], [D]
 

@@ -1,5 +1,6 @@
 # Samba V Kapkách Chlastu
 @ Xavier Baumaxa
+% 30
 
 // O půl tónu níže
 

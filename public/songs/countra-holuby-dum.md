@@ -1,6 +1,7 @@
 # Holubí Dům
 @ Country
 $ 3000 $
+% 90
 
 [Ami]Zpí[G]vám [F]ptákům a [Emi]zvlášť holu[Ami]bům,
 [Ami]stá[G]val v [F]údolí [Emi]mém starý [Ami]dům,

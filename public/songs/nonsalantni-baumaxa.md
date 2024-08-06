@@ -1,5 +1,6 @@
 # Nonšalantní Bonvián
 @ Xavier Baumaxa
+% 40
 
 // 1.
 Jsem [C] nedochvilný přítel, letní [Emi]balič turistů,

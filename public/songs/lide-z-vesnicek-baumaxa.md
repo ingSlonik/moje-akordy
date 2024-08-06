@@ -1,5 +1,6 @@
 # Lidé Z Malých Vesniček
 @ Xavier Baumaxa
+% 30
 
 ```
  F         C#        Dm        C

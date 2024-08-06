@@ -1,6 +1,6 @@
 # Vlaštovko, leť
 @ Jaromír Nohavica
-
+% 70
 
 [C]Vlaštovko, leť [Ami]přes Čínskou zeď,
 [F]přes písek pouště [G]Gobi,

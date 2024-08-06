@@ -1,5 +1,7 @@
 # Zvědavá
 @ UDG
+% 70
+
 
 předehra: [A], [E], [Fm#], [D]
 [A], [E], [Fm#], [Fm#]

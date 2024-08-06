@@ -1,5 +1,6 @@
 # Dokud se zpívá ještě se neumřelo
 @ Jaromír Nohavica
+% 80
 
 [C]Z Těšína [Emi]vyjíždí [Dmi7]vlaky co [F]čtvrthodi [C]nu,[Emi], [Dmi7], [G]
 [C]včera jsem [Emi]nespal a [Dmi7]ani dnes [F]nespočinu,[C], [Emi], [Dmi7], [G]

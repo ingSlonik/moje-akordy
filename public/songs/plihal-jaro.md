@@ -1,5 +1,6 @@
 # Jaro
 @ Karel Plíhal
+% 90
 
 [C]Jaro začlo [F]nešťast[C]ně, [Ami]jak os[Fmaj7]tatně vž[G]dyc[C]ky,
 neslaně a n[F]emastn[C]ě, zkrátka [Ami]makr[Fmaj7]obioti[G]ck[C]y,

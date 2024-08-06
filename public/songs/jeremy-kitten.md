@@ -1,6 +1,7 @@
 # Everybody Gets A Kitten
 @ Jeremy Messersmith
 $ 3500 $
+% 20
 
 Zpívám pouze se Zuzkou!
 

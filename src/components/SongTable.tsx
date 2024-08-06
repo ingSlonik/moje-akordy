@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import Ranking from "./Ranking";
 
 import { Song } from "../../types";
 
@@ -26,7 +27,7 @@ export default function SongTable(props: { songs: Song[] }) {
         }
 
         return songs
-            .sort((a, b) => a.search.localeCompare(b.search));
+            .sort((a, b) => b.rating - a.rating);
     }, [props.songs, search, type]);
 
     function handleType(typ: "song" | "poem") {
@@ -53,6 +54,7 @@ export default function SongTable(props: { songs: Song[] }) {
                 <tr>
                     <th>Název</th>
                     <th>Umělec</th>
+                    <th>Umím</th>
                     <th>Typ</th>
                 </tr>
             </thead>
@@ -66,6 +68,7 @@ export default function SongTable(props: { songs: Song[] }) {
                         </Link>
                     </td>
                     <td>{song.artist}</td>
+                    <td><Ranking ranking={song.rating} /></td>
                     <td>{song.type === "song" ? "Píseň" : "Báseň"}</td>
                 </tr>)}
             </tbody>

@@ -1,5 +1,6 @@
 # Gumídci
 @ Filmová Hudba
+% 40
 
 [C]Rázní a [G]smělí a s [F]hrdými [C]čely,
 [F]chtějí se dělit o [G]zážitky své.

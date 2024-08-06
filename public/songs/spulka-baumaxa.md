@@ -1,5 +1,6 @@
 # Špulka A Já
 @ Xavier Baumaxa
+% 40
 
 [C]Do navijárny igelitu [Cmaj7] jezdím ve svém bakelitu
 [Ami] trávit svoje směny veče[Fmi]rní.

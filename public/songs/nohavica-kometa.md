@@ -1,6 +1,7 @@
 # Kometa
 @ Jaromír Nohavica
 $ 2000
+% 80
 
 // brnkat
 
