@@ -30,6 +30,8 @@ export default async function Page({ params }: Props) {
             {text.split(";").map((t, i) => {
                 if (!t.trim() && !firstLine) {
                     return "";
+                } else if (t.startsWith("```")) {
+                    return <pre key={i}>{t.substring(3, t.length - 3)}</pre>;
                 } else if (t.startsWith("[")) {
                     return <sup key={i}>{t.substring(1, t.length - 1)}</sup>;
                 } else if (t.startsWith("//")) {
@@ -58,6 +60,7 @@ async function getSong(params: Props["params"]) {
         .split("\n")
         .filter(t => !t.startsWith("#") && !t.startsWith("@") && !t.startsWith("$"))
         .join("\n;")
+        .replace(/```([\s\S]*?)```/g, (match, p1) => `;${match.replaceAll(";", "")};`)
         .replace(/\[(.*?)\]/g, (match, p1) => `;${match};`);
 
     return { title, artist, scrollSpeed, text };
