@@ -68,8 +68,9 @@ async function deploy() {
     ssh.dispose();
     console.log(`✓ SSH connection is closed.\n`);
 
-    console.log(`Checking ${server}...`);
+    console.log(`Checking ${server} ...`);
     const res = await fetch(server);
+    console.log(`i Response status: ${res.status}`);
     if (res.status !== 200)
         throw new Error(`Server ${server} is not available!`);
     console.log(`✓ Server ${server} is running.\n`);
