@@ -1,6 +1,8 @@
 import AutoScroll from "@/components/AutoScroll";
 import NextSong from "@/components/NextSong";
+import Ranking from "@/components/Ranking";
 import { location } from "@/services/common";
+import { parseSong } from "@/services/parser";
 import { Metadata } from "next";
 
 type Props = {
@@ -8,37 +10,36 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const { title, artist, text } = await getSong(params);
+    const { title, artist, content } = await getSong(params);
 
     return {
         title: `${title} - ${artist} | Fílův zpěvník`,
-        description: `${title} - ${artist} \n${text.slice(0, 100)}`,
+        description: `${title} - ${artist}\n${content.slice(0, 100)}`,
     };
 }
 
 export default async function Page({ params }: Props) {
-    const { title, artist, scrollSpeed, text } = await getSong(params);
+    const { title, artist, scrollSpeed, rating, text } = await getSong(params);
 
-    let firstLine = false;
     return <main>
-        <AutoScroll speed={parseInt(scrollSpeed, 10)} />
+        <AutoScroll speed={scrollSpeed} />
 
         <h1 className="title">{title}</h1>
         <h2 className="artist">{artist}</h2>
+        <Ranking ranking={rating} />
 
         <p className="song">
             {text.split(";").map((t, i) => {
-                if (!t.trim() && !firstLine) {
-                    return "";
-                } else if (t.startsWith("```")) {
-                    return <pre key={i}>{t.substring(3, t.length - 3)}</pre>;
-                } else if (t.startsWith("[")) {
-                    return <sup key={i}>{t.substring(1, t.length - 1)}</sup>;
-                } else if (t.startsWith("//")) {
-                    return <span key={i} className="comment">{t.substring(2).trim()}</span>;
+                if (t.startsWith("T")) {
+                    return <pre key={i}>{t.substring(1)}</pre>;
+                } else if (t.startsWith("A")) {
+                    return <sup key={i}>{t.substring(1)}</sup>;
+                } else if (t.startsWith("C")) {
+                    return <span key={i} className="comment">{t.substring(1).trim()}</span>;
+                } else if (t.startsWith(" ")) {
+                    return t.substring(1);
                 } else {
-                    firstLine = true;
-                    return t;
+                    return null;
                 }
             })}
         </p>
@@ -52,24 +53,5 @@ async function getSong(params: Props["params"]) {
     const res = await fetch(location + '/songs/' + songFile + '.md', { cache: "no-store" });
     const content = await res.text();
 
-    const title = getLine("#", content);
-    const artist = getLine("@", content);
-    const scrollSpeed = getLine("$", content) || "2000";
-
-    const text = content
-        .split("\n")
-        .filter(t => !t.startsWith("#") && !t.startsWith("@") && !t.startsWith("$"))
-        .join("\n;")
-        .replace(/```([\s\S]*?)```/g, (match, p1) => `;${match.replaceAll(";", "")};`)
-        .replace(/\[(.*?)\]/g, (match, p1) => `;${match};`);
-
-    return { title, artist, scrollSpeed, text };
-}
-
-function getLine(symbol: string, content: string): null | string {
-    for (let line of content.split("\n")) {
-        if (line.startsWith(symbol))
-            return line.substring(symbol.length).trim();
-    }
-    return null;
+    return parseSong(content);
 }
