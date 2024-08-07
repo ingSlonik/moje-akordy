@@ -1,10 +1,9 @@
-import AutoScroll from "@/components/AutoScroll";
+import { Metadata } from "next";
+
 import NextSong from "@/components/NextSong";
-import Ranking from "@/components/Ranking";
 import Song from "@/components/Song";
 import { location } from "@/services/common";
 import { parseSong } from "@/services/parser";
-import { Metadata } from "next";
 
 type Props = {
     params: { file: string };

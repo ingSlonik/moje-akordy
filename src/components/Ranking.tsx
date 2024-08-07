@@ -1,5 +1,4 @@
 export default function Ranking({ ranking, size = 16 }: { ranking: number, size?: number }) {
-
     return <div>
         <div
             className="ranking"
