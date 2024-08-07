@@ -7,3 +7,12 @@ export type Song = {
     lastModified: string,
     bookTitle?: string,
 };
+
+export type SongDetail = {
+    title: string,
+    artist: string,
+    scrollSpeed: number,
+    rating: number,
+    content: string,
+    text: string,
+};
