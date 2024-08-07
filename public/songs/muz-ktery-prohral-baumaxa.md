@@ -1,6 +1,6 @@
 # Muž, Který Prohrál
 @ Xavier Baumaxa
-% 20
+% 70
 
 Můj [C]život se [Ami7]potácí v [Dmi]troskách
 Já [F]prohrál jsem v [Fmi]kartách i v [C]kostkách

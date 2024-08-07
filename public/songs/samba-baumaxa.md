@@ -1,8 +1,8 @@
 # Samba V Kapkách Chlastu
 @ Xavier Baumaxa
-% 30
+% 50
 
-// O půl tónu níže
+// O půl tónu níže, od "D"
 
 1.
 [D#7]Můj lékař mi [Cmi]doporučil [G#]dvě plzínky [B]denně

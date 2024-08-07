@@ -1,6 +1,8 @@
 # Bláznova Ukolébavka
 @ Country
-% 20
+% 70
+
+// Tronsponuj od "A"
 
 [G]Máš, má o večko, [D]dávno spát i [C]píseň ptáků [G]končí,
 [G]kvůli nám přestal [D]vítr vát, jen [C]můra zírá [G]zvenčí,
