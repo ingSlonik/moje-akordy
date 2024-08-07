@@ -7,7 +7,7 @@ import Ranking from "./Ranking";
 import { SongDetail } from "../../types";
 
 
-const chords = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "H"];
+const chords = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 
 export default function Song({ title, artist, text, rating, scrollSpeed }: SongDetail) {
 
@@ -47,7 +47,7 @@ export default function Song({ title, artist, text, rating, scrollSpeed }: SongD
                 } else if (t.startsWith("A")) {
                     let chord = t.substring(1);
                     // replace B to H
-                    if (chord.startsWith("B")) chord = "A#" + chord.substring(1);
+                    if (chord.startsWith("A#")) chord = "B" + chord.substring(2);
 
                     return <sup key={i}>{getTransposedChord(chord, transpositionShift)}</sup>;
                 } else if (t.startsWith("C")) {
