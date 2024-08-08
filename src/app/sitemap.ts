@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             priority: 1,
         },
         ...songs.map(song => ({
-            url: `${location}/${song.file}${song.type === "poem" ? `/${encodeURIComponent(song.title)}` : ""}`,
+            url: song.type === "song" ? `${location}/song/${song.file}` : `${location}/poem/${song.file}/${encodeURIComponent(song.title)}`,
             lastModified: song.lastModified,
             changeFrequency: 'monthly' as any, // ??? type nonsense
             priority: song.type === "song" ? 0.7 : 0.4,

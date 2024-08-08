@@ -62,7 +62,7 @@ export default function SongTable(props: { songs: Song[] }) {
                 {songs.length < 1 && <tr><td colSpan={3} style={{ textAlign: "center" }}>To co hledáš tu není...</td></tr>}
                 {songs.map((song, i) => <tr key={i}>
                     <td>
-                        <Link href={`/${song.file}${song.type === "poem" ? `/${encodeURIComponent(song.title)}` : ""}`}>
+                        <Link href={song.type === "song" ? `/song/${song.file}` : `/poem/${song.file}/${encodeURIComponent(song.title)}`}>
                             {song.title}
                             {song.bookTitle && ` (${song.bookTitle})`}
                         </Link>
