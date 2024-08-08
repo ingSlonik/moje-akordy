@@ -17,7 +17,7 @@ export default function AutoScroll({ speed = 1000 }: { speed: number }) {
         if (scroll) return;
 
         // const shift = Math.ceil(frameRate * fontSize / speed);
-        const frameRate = speed / (fontSize * window.devicePixelRatio);
+        const frameRate = speed / fontSize;
         const shift = 1;
         const int = setInterval(() => {
             window.scrollTo(0, window.scrollY + shift);
