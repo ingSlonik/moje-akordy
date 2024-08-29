@@ -1,7 +1,6 @@
-"use client"
-
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { Link } from "react-router-dom";
+
 import Ranking from "./Ranking";
 
 import { Song } from "../../types";
@@ -48,7 +47,8 @@ export default function SongTable(props: { songs: Song[] }) {
             <input type="checkbox" checked={type.includes("poem")} onChange={() => handleType("poem")} />
         </label>
 
-        <input type="text" placeholder="Hledat dle názvu a autora..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input type="text" placeholder="Hledat dle názvu a autora..."
+            value={search} onChange={(e) => setSearch(e.target.value)} />
         <table>
             <thead>
                 <tr>
@@ -59,10 +59,14 @@ export default function SongTable(props: { songs: Song[] }) {
                 </tr>
             </thead>
             <tbody>
-                {songs.length < 1 && <tr><td colSpan={3} style={{ textAlign: "center" }}>To co hledáš tu není...</td></tr>}
+                {songs.length < 1 && <tr><td colSpan={3} style={{ textAlign: "center" }}>
+                    To co hledáš tu není...
+                </td></tr>}
                 {songs.map((song, i) => <tr key={i}>
                     <td>
-                        <Link href={song.type === "song" ? `/song/${song.file}` : `/poem/${song.file}/${encodeURIComponent(song.title)}`}>
+                        <Link to={song.type === "song" ?
+                            `/${song.file}` :
+                            `/${song.file}/${encodeURIComponent(song.title)}`}>
                             {song.title}
                             {song.bookTitle && ` (${song.bookTitle})`}
                         </Link>

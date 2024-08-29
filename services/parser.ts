@@ -17,7 +17,7 @@
  * ";A" - chord
  */
 
-import { SongDetail } from "../../types";
+import { SongDetail } from "../types";
 
 export function parseSong(song: string): SongDetail {
     const { title, artist, scrollSpeed, rating, content } = parseHeaders(song);

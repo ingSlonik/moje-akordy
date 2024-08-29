@@ -16,3 +16,10 @@ export type SongDetail = {
     content: string,
     text: string,
 };
+
+export type PoemDetail = {
+    title: string;
+    artist: string | null;
+    bookTitle: string | null;
+    text: string;
+}
