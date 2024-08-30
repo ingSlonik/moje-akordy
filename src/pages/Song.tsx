@@ -1,5 +1,6 @@
-import { useParams } from "react-router-dom";
+import React from "react";
 
+import { useParams } from "@/Router";
 import { useSong } from "@/hooks";
 import Song from "@/components/Song";
 import NextSong from "@/components/NextSong";
@@ -26,7 +27,7 @@ export default function SongPage() {
     const song = useSong(file || "");
 
     return <main>
-        {song === null && <p>Písně se načítají...</p>}
+        {song === null && <p>Píseň se načítá...</p>}
         {song instanceof Error && <p className="error">{song.message}</p>}
         {song && !(song instanceof Error) && <Song {...song} />}
 

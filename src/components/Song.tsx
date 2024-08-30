@@ -1,4 +1,3 @@
-"use client"
 import { Fragment, useState } from "react";
 
 import AutoScroll from "./AutoScroll";
@@ -88,4 +87,3 @@ function getChordBase(chord: string) {
     const isSharp = chord.charAt(1) === "#";
     return chord.substring(0, isSharp ? 2 : 1);
 }
-

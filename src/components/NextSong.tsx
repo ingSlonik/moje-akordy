@@ -1,6 +1,5 @@
-import { Link } from "react-router-dom";
-
 import { useSongs } from "@/hooks";
+import { Link } from "@/Router";
 
 export default function NextSong({ type }: { type: "song" | "poem" }) {
     const songs = useSongs();

@@ -1,6 +1,8 @@
-import { useParams } from "react-router-dom";
+import React from "react";
+
 import NextSong from "@/components/NextSong";
 import { usePoem } from "@/hooks";
+import { useParams } from "@/Router";
 
 /* TODO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -25,7 +27,7 @@ export default function PoemPage() {
     const poem = usePoem(file || "", title || "");
 
     return <main>
-        {poem === null && <p>Báseň se načítají...</p>}
+        {poem === null && <p>Báseň se načítá...</p>}
         {poem instanceof Error && <p className="error">{poem.message}</p>}
         {poem && !(poem instanceof Error) && <>
             <h1 className="title">{poem.title}</h1>

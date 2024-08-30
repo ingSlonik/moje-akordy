@@ -1,11 +1,9 @@
-import {
-    BrowserRouter, Link
-} from "react-router-dom";
+import React from "react";
 
-import PageRouter from "./Router";
+import PageRouter, { Link } from "./Router";
 
 export default function App() {
-    return <BrowserRouter>
+    return <>
         <nav>
             <div className="content">
                 <Link to="/">
@@ -16,5 +14,5 @@ export default function App() {
         </nav>
 
         <PageRouter />
-    </BrowserRouter>;
+    </>;
 }

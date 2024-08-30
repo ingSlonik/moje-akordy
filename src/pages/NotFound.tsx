@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/Router";
 
 export default function NotFoundPage() {
     return <main>

@@ -1,9 +1,15 @@
 import React from "react";
-import { createRoot } from 'react-dom/client';
+import { createRoot, hydrateRoot } from 'react-dom/client';
 
 import App from "./App";
 
-const root = createRoot(document.getElementById('root') as HTMLElement);
-root.render(<React.StrictMode>
+const rootElement = document.getElementById('root') as HTMLElement;
+const initialChildren = <React.StrictMode>
     <App />
-</React.StrictMode>);
+</React.StrictMode>;
+
+if (process.env.NODE_ENV === "development") {
+    createRoot(rootElement).render(initialChildren);
+} else {
+    hydrateRoot(rootElement, initialChildren);
+}

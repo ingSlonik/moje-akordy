@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 
 import Ranking from "./Ranking";
 
 import { Song } from "../../types";
+import { Link } from "@/Router";
 
 export default function SongTable(props: { songs: Song[] }) {
 
