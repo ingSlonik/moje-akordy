@@ -31,11 +31,10 @@ if (process.env.NODE_ENV === "development") {
 app.get("/", async (req, res) => {
     // const songs = await getSongs();
 
+    // TODO: set songs
     setServerRenderingHref(location + "/");
 
     const html = await readFile(indexPath, "utf-8");
-
-    // global.window = { location: { href: location + "/" } };
 
     const app = renderToString(<App />);
 
@@ -90,6 +89,19 @@ app.get('/api/poem/:file', async (req, res) => {
     const file = req.params.file + ".md";
     const path = resolve(dirPoems, file);
     res.sendFile(path);
+});
+
+app.get("*", async (req, res) => {
+
+    // TODO: set song or poem
+    setServerRenderingHref(location + req.url);
+
+    const html = await readFile(indexPath, "utf-8");
+
+    const app = renderToString(<App />);
+
+    res.set('Content-Type', 'text/html');
+    res.send(html.replace('<div id="root"></div>', '<div id="root">' + app + "</div>"));
 });
 
 app.listen(PORT, () => console.log(`Moje akordy app listening on port ${PORT}`));
