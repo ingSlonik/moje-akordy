@@ -1,30 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 import { useParams } from "@/Router";
-import { useSong } from "@/hooks";
 import Song from "@/components/Song";
 import NextSong from "@/components/NextSong";
-
-/* TODO
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const song = await getSong(params);
-    if (!song) return {
-        title: `404 | Fílův zpěvník`,
-        description: `404 |Píseň nenalezena`,
-    };
-
-    const { title, artist, content } = song;
-    return {
-        title: `${title} - ${artist} | Fílův zpěvník`,
-        description: `${title} - ${artist}\n${content.slice(0, 100)}`,
-    };
-}
-*/
+import { useSong } from "../../services/hooks";
 
 export default function SongPage() {
     const { file } = useParams();
 
     const song = useSong(file || "");
+
+    useEffect(() => {
+        if (song && !(song instanceof Error))
+            document.title = `${song.title} - ${song.artist} | Fílův zpěvník`;
+    }, [song]);
 
     return <main>
         {song === null && <p>Píseň se načítá...</p>}

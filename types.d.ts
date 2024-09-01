@@ -1,3 +1,9 @@
+type RenderingData = {
+    songs?: Song[],
+    song?: null | SongDetail,
+    poem?: null | PoemDetail,
+}
+
 export type Song = {
     file: string,
     type: "song" | "poem",

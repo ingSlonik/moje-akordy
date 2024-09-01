@@ -1,7 +1,7 @@
 import React, { useState } from "react";
+import { useSongs } from "../../services/hooks";
 
 import SongTable from "@/components/SongTable";
-import { useSongs } from "@/hooks";
 
 /* TODO
 export const metadata: Metadata = {

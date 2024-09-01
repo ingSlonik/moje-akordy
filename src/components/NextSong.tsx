@@ -1,4 +1,6 @@
-import { useSongs } from "@/hooks";
+import React from "react";
+import { useSongs } from "../../services/hooks";
+
 import { Link } from "@/Router";
 
 export default function NextSong({ type }: { type: "song" | "poem" }) {

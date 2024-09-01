@@ -17,7 +17,7 @@
  * ";A" - chord
  */
 
-import { SongDetail } from "../types";
+import { PoemDetail, SongDetail } from "../types";
 
 export function parseSong(song: string): SongDetail {
     const { title, artist, scrollSpeed, rating, content } = parseHeaders(song);
@@ -66,4 +66,33 @@ function parseHeaders(song: string) {
         rating,
         content: content.join("\n").trim() + "\n",
     };
+}
+
+// TODO: optimize
+export function parsePoem(content: string, title: string): null | PoemDetail {
+    const artist = getLine("@", content);
+    const bookTitle = getLine("# ", content);
+
+    let indexPoem = content.indexOf(`## ${title}`);
+    // for ... poem:
+    if (indexPoem === -1) {
+        indexPoem = content.indexOf(`## ...\n${title}`);
+    }
+    if (indexPoem === -1)
+        return null;
+
+    const indexEndPoem = content.indexOf(`## `, indexPoem + 2);
+
+    const text = content.slice(content.indexOf(`\n`, indexPoem), indexEndPoem);
+
+    // TODO: check if mounted
+    return { title, artist, bookTitle, text };
+}
+
+function getLine(symbol: string, content: string): null | string {
+    for (const line of content.split("\n")) {
+        if (line.startsWith(symbol))
+            return line.substring(symbol.length).trim();
+    }
+    return null;
 }

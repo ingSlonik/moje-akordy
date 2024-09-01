@@ -8,27 +8,21 @@ import NotFoundPage from "./pages/NotFound";
 export default function PageRouter() {
     const { file, title } = useParams();
 
-    if (file && title) {
+    if (file === "404") {
+        return <NotFoundPage />;
+    } else if (file && title) {
         return <PoemPage />;
     } else if (file) {
         return <SongPage />;
     } else {
         return <HomePage />;
     }
-
-    return <NotFoundPage />;
 }
-
 
 
 const listeners: ((to: string) => void)[] = [];
 
-let href: string;
-export function setServerRenderingHref(serverHref: string) {
-    href = serverHref;
-}
-
-function getHref(): string {
+export function setServerRenderingHref(href: string) {
     if (href) return href;
 
     return window.location.href;
@@ -36,15 +30,15 @@ function getHref(): string {
 
 export type Params = { file: null | string, title: null | string };
 export function useParams(): Params {
-    const [, setChange] = useState(getHref());
+    const [url, setUrl] = useState(window.location.href);
 
-    const params = getHref().split("/");
+    const params = url.split("/");
     const file = params[3] || null;
     const title = params[4] || null;
 
     useEffect(() => {
         function listener() {
-            setChange(getHref());
+            setUrl(window.location.href);
         }
 
         listeners.push(listener);

@@ -7,15 +7,16 @@ import { renderToString } from 'react-dom/server';
 import App from "@/App";
 
 import { readdir, readFile, stat } from "fs/promises";
-import { parseSong } from "../services/parser";
+import { parsePoem, parseSong } from "../services/parser";
 import { location } from "../services/common";
 
-import { Song } from "../types";
-import { setServerRenderingHref } from "@/Router";
+import { RenderingData, Song } from "../types";
 
 const dirSongs = resolve(process.cwd(), "public", "songs");
 const dirPoems = resolve(process.cwd(), "public", "poems");
 const indexPath = resolve(process.cwd(), "dist", "index.html");
+
+const image = "https://kurzyvkurzu.fun/android-chrome-512x512.png";
 
 const PORT = process.env.PORT || 1010;
 
@@ -27,19 +28,20 @@ if (process.env.NODE_ENV === "development") {
 }
 
 
-
 app.get("/", async (req, res) => {
-    // const songs = await getSongs();
+    const songs = await getSongs();
 
-    // TODO: set songs
-    setServerRenderingHref(location + "/");
-
-    const html = await readFile(indexPath, "utf-8");
-
-    const app = renderToString(<App />);
+    const html = await getRenderedHTML(
+        location + req.url,
+        "Fílův zpěvník",
+        // eslint-disable-next-line max-len
+        "Osobní zpěvník Fíly! Obsahuje jak písně s akordy tak proložní básničkama. Je úplně bez reklam! A má auto scroll!",
+        image,
+        { songs },
+    );
 
     res.set('Content-Type', 'text/html');
-    res.send(html.replace('<div id="root"></div>', '<div id="root">' + app + "</div>"));
+    res.send(html);
 });
 
 app.use(express.static('dist'));
@@ -83,29 +85,114 @@ app.get('/api/song', async (req, res) => {
 app.get('/api/song/:file', async (req, res) => {
     const file = req.params.file + ".md";
     const path = resolve(dirSongs, file);
-    res.sendFile(path);
+    const text = await readFile(path, "utf-8");
+    const song = parseSong(text);
+    res.json(song);
 });
-app.get('/api/poem/:file', async (req, res) => {
+app.get('/api/poem/:file/:title', async (req, res) => {
     const file = req.params.file + ".md";
+    const title = req.params.title;
     const path = resolve(dirPoems, file);
-    res.sendFile(path);
+    const text = await readFile(path, "utf-8");
+    const poem = parsePoem(text, title);
+    res.json(poem);
 });
 
-app.get("*", async (req, res) => {
+// 404
+app.get("/404", async (req, res) => {
+    const html = await getRenderedHTML(
+        location + req.url,
+        "404 | Píseň nenalezena | Fílův zpěvník",
+        "404 Píseň nenalezena, ale zkoušej to dál, je tu velká hromada písní ;)",
+        image,
+        {},
+    );
 
-    // TODO: set song or poem
-    setServerRenderingHref(location + req.url);
+    res.set('Content-Type', 'text/html');
+    res.send(html);
+});
 
-    const html = await readFile(indexPath, "utf-8");
+// song
+app.get("/:file", async (req, res) => {
+    try {
+        const file = req.params.file + ".md";
+        const path = resolve(dirSongs, file);
+        const text = await readFile(path, "utf-8");
+        const song = parseSong(text);
+
+        const html = await getRenderedHTML(
+            location + req.url,
+            `${song.title} - ${song.artist} | Fílův zpěvník`,
+            `${song.title} - ${song.artist}\n${song.content.slice(0, 100)}`,
+            image,
+            { song },
+        );
+
+        res.set('Content-Type', 'text/html');
+        res.send(html);
+    } catch (e) {
+        console.log("Error:", req.url, e);
+        res.redirect(302, "/404");
+    }
+});
+// poem
+app.get("/:file/:title", async (req, res) => {
+    try {
+        const file = req.params.file + ".md";
+        const title = req.params.title;
+        const path = resolve(dirPoems, file);
+        const text = await readFile(path, "utf-8");
+        const poem = parsePoem(text, title);
+
+        if (!poem)
+            return res.redirect(302, "/404");
+
+        const html = await getRenderedHTML(
+            location + req.url,
+            `${poem.title} - ${poem.artist} (${poem.bookTitle}) | Fílův zpěvník`,
+            `${poem.title} - ${poem.artist} (${poem.bookTitle}) \n${text.slice(0, 100)}`,
+            image,
+            { poem },
+        );
+
+        res.set('Content-Type', 'text/html');
+        res.send(html);
+    } catch (e) {
+        console.log("Error:", req.url, e);
+        res.redirect(302, "/404");
+    }
+});
+
+
+app.listen(PORT, () => console.log(`Moje akordy app listening on http://localhost:${PORT}`));
+
+
+
+async function getRenderedHTML(
+    url: string, title: string, description: string, image: string, renderingData: Partial<RenderingData>,
+) {
+
+    // @ts-expect-error Set rendering data for router and useSongs
+    global.window = { RENDERING_DATA: renderingData, location: { href: url } };
+
+    let html = await readFile(indexPath, "utf-8");
+    html = html.replace("<head>", `<head>${renderToString(<>
+        <title>{title}</title>
+        <meta name="description" content={description} />
+
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:image" content={image} />
+        <meta property="og:url" content={url} />
+    </>)}`);
 
     const app = renderToString(<App />);
 
-    res.set('Content-Type', 'text/html');
-    res.send(html.replace('<div id="root"></div>', '<div id="root">' + app + "</div>"));
-});
+    // eslint-disable-next-line max-len
+    html = html.replace(`<div id="root"></div>`, `<div id="root">${app}</div><script type="text/javascript">window.RENDERING_DATA=${JSON.stringify(renderingData)};</script>`);
 
-app.listen(PORT, () => console.log(`Moje akordy app listening on port ${PORT}`));
-
+    return html;
+}
 
 async function getSongs(): Promise<Song[]> {
     const songs: Song[] = [];

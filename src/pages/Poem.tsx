@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { usePoem } from "../../services/hooks";
 
 import NextSong from "@/components/NextSong";
-import { usePoem } from "@/hooks";
 import { useParams } from "@/Router";
 
 /* TODO
@@ -24,7 +24,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default function PoemPage() {
     const { file, title } = useParams();
 
-    const poem = usePoem(file || "", title || "");
+    const poem = usePoem(file || "", decodeURIComponent(title || ""));
+
+    useEffect(() => {
+        if (poem && !(poem instanceof Error))
+            document.title = `${poem.title} - ${poem.artist} (${poem.bookTitle}) | Fílův zpěvník`;
+    }, [poem]);
 
     return <main>
         {poem === null && <p>Báseň se načítá...</p>}

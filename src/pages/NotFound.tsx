@@ -1,3 +1,5 @@
+import React from "react";
+
 import { Link } from "@/Router";
 
 export default function NotFoundPage() {
