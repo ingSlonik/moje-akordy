@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 
 import { location } from "../services/common";
+import { getRenderingData, removeRenderingData } from "./renderingData";
 
 import { PoemDetail, Song, SongDetail } from "../types";
 
 export function useSongs(): null | Error | Song[] {
-    // @ts-expect-error Set rendering data for songs
-    const defaultSongs: Song[] = window?.RENDERING_DATA?.songs || null;
+    const defaultSongs: null | Song[] = getRenderingData()?.songs || null;
     const [songs, setSongs] = useState<null | Error | Song[]>(defaultSongs);
 
     useEffect(() => {
@@ -34,14 +34,12 @@ export function useSongs(): null | Error | Song[] {
 }
 
 export function useSong(file: string): null | Error | SongDetail {
-    // @ts-expect-error Set rendering data for songs
-    const defaultSong: SongDetail = window?.RENDERING_DATA?.song || null;
+    const defaultSong: null | SongDetail = getRenderingData()?.song || null;
     const [song, setSong] = useState<null | Error | SongDetail>(defaultSong);
 
     useEffect(() => {
         if (defaultSong) {
-            // @ts-expect-error Next song will be fetched
-            delete window.RENDERING_DATA.song;
+            removeRenderingData("song");
             return;
         }
 
@@ -67,9 +65,15 @@ export function useSong(file: string): null | Error | SongDetail {
 }
 
 export function usePoem(file: string, title: string): null | Error | PoemDetail {
-    const [poem, setPoem] = useState<null | Error | PoemDetail>(null);
+    const defaultPoem: null | PoemDetail = getRenderingData()?.poem || null;
+    const [poem, setPoem] = useState<null | Error | PoemDetail>(defaultPoem);
 
     useEffect(() => {
+        if (defaultPoem) {
+            removeRenderingData("poem");
+            return;
+        }
+
         if (file) {
             (async () => {
                 try {

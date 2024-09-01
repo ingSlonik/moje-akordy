@@ -8,6 +8,7 @@ import App from "@/App";
 
 import { readdir, readFile, stat } from "fs/promises";
 import { parsePoem, parseSong } from "../services/parser";
+import { setRenderingData } from "../services/renderingData";
 import { location } from "../services/common";
 
 import { RenderingData, Song } from "../types";
@@ -172,8 +173,7 @@ async function getRenderedHTML(
     url: string, title: string, description: string, image: string, renderingData: Partial<RenderingData>,
 ) {
 
-    // @ts-expect-error Set rendering data for router and useSongs
-    global.window = { RENDERING_DATA: renderingData, location: { href: url } };
+    setRenderingData(renderingData, url);
 
     let html = await readFile(indexPath, "utf-8");
     html = html.replace("<head>", `<head>${renderToString(<>
