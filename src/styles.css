@@ -55,6 +55,20 @@ nav a span {
   text-decoration: none;
 }
 
+nav .logo {
+  display: inline-block;
+  width: 64px;
+  height: 64px;
+  margin: 0px;
+  padding: 0px;
+  background-image: url(/public/icon.png?width=64&height=64);
+  background-image: image-set(url(/public/icon.png?as=webp&width=64&height=64) 1x,
+      url(/public/icon.png?as=webp&width=128&height=128) 2x,
+      url(/public/icon.png?as=webp&width=192&height=192) 3x);
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
 label {
   display: inline-block;
   margin-right: 32px;
