@@ -17,7 +17,7 @@ const dirSongs = resolve(process.cwd(), "public", "songs");
 const dirPoems = resolve(process.cwd(), "public", "poems");
 const indexPath = resolve(process.cwd(), "dist", "index.html");
 
-const image = "https://kurzyvkurzu.fun/android-chrome-512x512.png";
+const image = "https://kurzyvkurzu.fun/icon-512x512.png";
 
 const PORT = process.env.PORT || 1010;
 

@@ -5,27 +5,37 @@
     "start_url": "/",
     "icons": [
         {
-            "src": "./favicon-16x16.png",
+            "src": "./icon.png?width=16&height=16",
             "sizes": "16x16",
             "type": "image/png"
         },
         {
-            "src": "./favicon-32x32.png",
+            "src": "./icon.png?width=32&height=32",
             "sizes": "32x32",
             "type": "image/png"
         },
         {
-            "src": "./android-chrome-192x192.png",
+            "src": "./icon-512x512.png?as=webp&width=192&height=192",
+            "sizes": "192x192",
+            "type": "image/webp"
+        },
+        {
+            "src": "./icon-512x512.png?width=192&height=192",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "./android-chrome-512x512.png",
+            "src": "./icon-512x512.png?as=webp",
+            "sizes": "512x512",
+            "type": "image/webp"
+        },
+        {
+            "src": "./icon-512x512.png",
             "sizes": "512x512",
             "type": "image/png"
         },
         {
-            "src": "./apple-touch-icon.png",
+            "src": "./icon.png?width=180&height=180",
             "sizes": "180x180",
             "type": "image/png"
         }
