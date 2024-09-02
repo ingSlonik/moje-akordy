@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "parcel src/index.html",
     "build": "parcel build src/index.html",
+    "build:ssr": "parcel build src/App.tsx",
     "start": "tsx server/index.tsx",
     "start:dev": "NODE_ENV=development tsx --watch server/index.tsx",
     "deploy": "tsx deploy.ts"

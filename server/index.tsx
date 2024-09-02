@@ -4,12 +4,12 @@ import cors from "cors";
 
 import React from "react";
 import { renderToString } from 'react-dom/server';
-import App from "@/App";
 
 import { readdir, readFile, stat } from "fs/promises";
 import { parsePoem, parseSong } from "../services/parser";
 import { setRenderingData } from "../services/renderingData";
 import { location } from "../services/common";
+import { getImageName } from "../services/imageNamer";
 
 import { RenderingData, Song } from "../types";
 
@@ -186,12 +186,28 @@ async function getRenderedHTML(
         <meta property="og:url" content={url} />
     </>)}`);
 
+    // @ts-expect-error It is extended returning original URL
+    global.URL = URLWithTransformer;
+    const App = (await import("@/App")).default;
     const app = renderToString(<App />);
+    global.URL = URLOriginal;
 
     // eslint-disable-next-line max-len
     html = html.replace(`<div id="root"></div>`, `<div id="root">${app}</div><script type="text/javascript">window.RENDERING_DATA=${JSON.stringify(renderingData)};</script>`);
 
     return html;
+}
+
+const URLOriginal = URL;
+class URLWithTransformer extends URLOriginal {
+    constructor(path: string, base?: string | URL) {
+        super(path, base);
+        if (typeof base === "string" && base.startsWith("file:")) {
+            const name = getImageName(new URLOriginal(path, `file://${process.cwd()}`));
+            return new URLOriginal(name, location);
+        }
+        return new URLOriginal(path, base);
+    }
 }
 
 async function getSongs(): Promise<Song[]> {

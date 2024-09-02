@@ -1,0 +1,7 @@
+{
+    "extends": "@parcel/config-default",
+    "namers": [
+        "./services/imageNamer.ts",
+        "@parcel/namer-default"
+    ]
+}
