@@ -85,7 +85,7 @@ async function serverCheck(server: string) {
     const res = await fetch(server);
     console.log(`i Response status: ${res.status}`);
 
-    return res.status !== 200;
+    return res.status === 200;
 }
 
 async function sshExec(ssh: NodeSSH, command: string, error?: string): Promise<SSHExecCommandResponse> {
