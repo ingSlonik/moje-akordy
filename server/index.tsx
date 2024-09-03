@@ -23,7 +23,7 @@ const image = location + "/icon-512x512.png";
 const PORT = process.env.PORT || 1010;
 
 const app = express();
-app.use(compression());
+app.use(compression({ level: 9 }));
 
 
 if (process.env.NODE_ENV === "development") {
