@@ -1,4 +1,5 @@
 import { parse, resolve } from "path";
+import compression from "compression";
 import express from "express";
 import cors from "cors";
 
@@ -17,11 +18,13 @@ const dirSongs = resolve(process.cwd(), "public", "songs");
 const dirPoems = resolve(process.cwd(), "public", "poems");
 const indexPath = resolve(process.cwd(), "dist", "index.html");
 
-const image = "https://kurzyvkurzu.fun/icon-512x512.png";
+const image = location + "/icon-512x512.png";
 
 const PORT = process.env.PORT || 1010;
 
 const app = express();
+app.use(compression());
+
 
 if (process.env.NODE_ENV === "development") {
     console.log("Starting development server...")
