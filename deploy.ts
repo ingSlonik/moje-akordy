@@ -68,14 +68,24 @@ async function deploy() {
     ssh.dispose();
     console.log(`✓ SSH connection is closed.\n`);
 
-    console.log(`Checking ${server} ...`);
-    const res = await fetch(server);
-    console.log(`i Response status: ${res.status}`);
-    if (res.status !== 200)
-        throw new Error(`Server ${server} is not available!`);
+    if (!await serverCheck(server)) {
+        console.log(`i I'm giving the server 2 seconds to recover...`);
+        await timeout(2000);
+        if (!await serverCheck(server))
+            throw new Error(`Server ${server} is not available!`);
+    }
+
     console.log(`✓ Server ${server} is running.\n`);
 
     console.log(`------------------------\n✓ Successfully deployed.`);
+}
+
+async function serverCheck(server: string) {
+    console.log(`Checking ${server} ...`);
+    const res = await fetch(server);
+    console.log(`i Response status: ${res.status}`);
+
+    return res.status !== 200;
 }
 
 async function sshExec(ssh: NodeSSH, command: string, error?: string): Promise<SSHExecCommandResponse> {
@@ -108,6 +118,10 @@ async function getFiles(path: string) {
         }
     }
     return paths;
+}
+
+async function timeout(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 deploy();
