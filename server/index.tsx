@@ -14,6 +14,8 @@ import { getImageName } from "../services/imageNamer";
 
 import { RenderingData, Song } from "../types";
 
+global.React = React;
+
 const dirSongs = resolve(process.cwd(), "public", "songs");
 const dirPoems = resolve(process.cwd(), "public", "poems");
 const indexPath = resolve(process.cwd(), "dist", "index.html");
