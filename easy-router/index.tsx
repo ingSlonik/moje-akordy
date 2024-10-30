@@ -42,7 +42,7 @@ const defaultRouterContext: RouterHistory & Actions = {
     forward: () => {},
 };
 
-const PageContext = createContext(getPageProps(defaultPage.key, defaultPage.href, 0, 0));
+const PageContext = createContext(getPageProps(defaultPage.pageKey, defaultPage.href, 0, 0));
 
 const RouterContext = createContext(defaultRouterContext);
 
