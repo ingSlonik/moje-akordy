@@ -8,16 +8,14 @@ body {
   background-color: white;
   padding: 0px;
   margin: 0px;
+  width: 100%;
+  height: 100%;
 }
 
-body {
+#root, .page-router {
   position: relative;
-  max-width: 800px;
-  margin: 0px auto;
-  padding-top: 64px;
-  padding-bottom: 64px;
-  padding-left: 16px;
-  padding-right: 16px;
+  width: 100%;
+  height: 100%;
 }
 
 nav {
@@ -67,6 +65,48 @@ nav .logo {
       url(/public/icon.png?as=webp&width=192&height=192) 3x);
   background-position: center center;
   background-repeat: no-repeat;
+}
+
+.page-router {
+  overflow-x: hidden;
+}
+
+.page-animation {
+  box-sizing: border-box;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  transition: 0.5s;
+  padding-top: 66px; /* nav height */
+}
+.page-animation.active {
+  opacity: 1;
+  transform: translateX(0%);
+}
+.page-animation.active.new {
+  animation: translateIn 0.5s ease-in-out;
+}
+.page-animation.back {
+  opacity: 0;
+  transform: translateX(0%);
+  pointer-events: none;
+}
+.page-animation.forward {
+  opacity: 1;
+  transform: translateX(100%);
+  pointer-events: none;
+}
+
+@keyframes translateIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0%); }
+}
+
+main {
+  max-width: 800px;
+  margin: 0px auto;
 }
 
 label {

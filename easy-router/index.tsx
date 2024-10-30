@@ -9,7 +9,7 @@ export type Actions = {
 export type PageState = "active" | "back" | "forward";
 
 export type PageProps = {
-    key: string,
+    pageKey: string,
     href: string,
     path: string[],
     searchParams: Record<string, string>,
@@ -19,13 +19,13 @@ export type PageProps = {
 type RouterHistory = {
     index: number,
     pages: {
-        key: string,
+        pageKey: string,
         href: string,
     }[],
 };
 
 const defaultPage = {
-    key: new Date().toISOString(),
+    pageKey: new Date().toISOString(),
     href: window.location.href,
 }
 
@@ -66,7 +66,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
                 const pages = history.pages.slice(history.index);
 
                 const newPage = {
-                    key: new Date().toISOString(),
+                    pageKey: new Date().toISOString(),
                     href: newHref,
                 };
 
@@ -125,35 +125,40 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     </RouterContext.Provider>
 }
 
+export type RenderAnimationProps = PageProps & { page: ReactNode };
+
 export type RouterProps = {
     renderPage: (props: PageProps) => ReactNode,
-    renderAnimation?: (props: PageProps & { page: ReactNode }) => ReactNode,
+    renderAnimation?: (props: RenderAnimationProps) => ReactNode,
 };
 
 export function Router({ renderPage, renderAnimation }: RouterProps) {
     const { index, pages } = useContext(RouterContext);
 
-    if (!renderAnimation) {
-        const activePage = pages[index];
-        const pageProps = getPageProps(activePage.key, activePage.href, index, index);
+    const Page = renderPage;
+    const Animation = renderAnimation;
 
-        return <PageContext.Provider value={pageProps}>
-            {renderPage(pageProps)}
-        </PageContext.Provider>;
-    } else {
-
+    if (Animation) {
         return <>
             {pages.map((page, i) => {
-                const pageProps = getPageProps(page.key, page.href, i, index);
-
+                const pageProps = getPageProps(page.pageKey, page.href, i, index);
+    
                 return <PageContext.Provider 
-                    key={page.key} 
+                    key={page.pageKey} 
                     value={pageProps}
                 >
-                    {renderPage(pageProps)}
+                    <Animation {...pageProps} page={<Page {...pageProps} />} />
                 </PageContext.Provider>;
             })}
         </>;
+    } else {
+
+        const activePage = pages[index];
+        const pageProps = getPageProps(activePage.pageKey, activePage.href, index, index);
+
+        return <PageContext.Provider value={pageProps}>
+            <Page {...pageProps} />
+        </PageContext.Provider>;
     }
 }
 
@@ -181,11 +186,11 @@ export function useRouter(): RouterHook {
     return { ...pageProps, push, back, forward };
 }
 
-function getPageProps(key: string, href: string, index: number, actualIndex: number): PageProps {
+function getPageProps(pageKey: string, href: string, index: number, actualIndex: number): PageProps {
     const url = new URL(href);
 
     return {
-        key,
+        pageKey,
         href,
         path: url.pathname.split("/").map(p => decodeURIComponent(p)).filter(Boolean),
         searchParams: Object.fromEntries(url.searchParams),
