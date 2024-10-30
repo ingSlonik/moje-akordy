@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import { usePoem } from "../../services/hooks";
 
 import NextSong from "@/components/NextSong";
-import { useParams } from "@/Router";
 
 /* TODO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -21,10 +20,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 */
 
-export default function PoemPage() {
-    const { file, title } = useParams();
-
-    const poem = usePoem(file || "", decodeURIComponent(title || ""));
+export default function PoemPage({ file, title }: { file: string, title: string }) {
+    const poem = usePoem(file, title);
 
     useEffect(() => {
         if (poem && !(poem instanceof Error))

@@ -1,7 +1,7 @@
 import React from "react";
-import { useSongs } from "../../services/hooks";
+import { Link } from "../../easy-router";
 
-import { Link } from "@/Router";
+import { useSongs } from "../../services/hooks";
 
 export default function NextSong({ type }: { type: "song" | "poem" }) {
     const songs = useSongs();

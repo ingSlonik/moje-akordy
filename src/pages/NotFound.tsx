@@ -1,6 +1,5 @@
 import React from "react";
-
-import { Link } from "@/Router";
+import { Link } from "../../easy-router";
 
 export default function NotFoundPage() {
     return <main>

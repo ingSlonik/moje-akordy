@@ -1,14 +1,11 @@
 import React, { useEffect } from "react";
 
-import { useParams } from "@/Router";
 import Song from "@/components/Song";
 import NextSong from "@/components/NextSong";
 import { useSong } from "../../services/hooks";
 
-export default function SongPage() {
-    const { file } = useParams();
-
-    const song = useSong(file || "");
+export default function SongPage({ file }: { file: string }) {
+    const song = useSong(file);
 
     useEffect(() => {
         if (song && !(song instanceof Error))

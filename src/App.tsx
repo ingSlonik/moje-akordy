@@ -1,13 +1,14 @@
 import React from "react";
 
-import PageRouter, { Link } from "./Router";
+import { RouterProvider, Link } from "../easy-router";
+import PageRouter from "./Router";
 
 const logo64 = new URL('/public/icon.png?as=webp&width=64&height=64', import.meta.url);
 const logo128 = new URL('/public/icon.png?as=webp&width=128&height=128', import.meta.url);
 const logo192 = new URL('/public/icon.png?as=webp&width=192&height=192', import.meta.url);
 
 export default function App() {
-    return <>
+    return <RouterProvider>
         <nav>
             <div className="content">
                 <Link to="/">
@@ -22,5 +23,5 @@ export default function App() {
         </nav>
 
         <PageRouter />
-    </>;
+    </RouterProvider>;
 }
