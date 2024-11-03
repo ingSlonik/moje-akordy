@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
-import { usePoem } from "../../services/hooks";
+import { useEffect } from "react";
+import { usePoem } from "../../services/hooks.ts";
 
-import NextSong from "@/components/NextSong";
+import NextSong from "../components/NextSong.tsx";
 
 /* TODO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -20,27 +20,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 */
 
-export default function PoemPage({ file, title }: { file: string, title: string }) {
+export default function PoemPage({ file, title }: { file: string; title: string }) {
     const poem = usePoem(file, title);
 
     useEffect(() => {
-        if (poem && !(poem instanceof Error))
+        if (poem && !(poem instanceof Error)) {
             document.title = `${poem.title} - ${poem.artist} (${poem.bookTitle}) | Fílův zpěvník`;
+        }
     }, [poem]);
 
-    return <main>
-        {poem === null && <p>Báseň se načítá...</p>}
-        {poem instanceof Error && <p className="error">{poem.message}</p>}
-        {poem && !(poem instanceof Error) && <>
-            <h1 className="title">{poem.title}</h1>
-            <div className="book-title">{poem.bookTitle}</div>
-            <h2 className="artist">{poem.artist}</h2>
+    return (
+        <main>
+            {poem === null && <p>Báseň se načítá...</p>}
+            {poem instanceof Error && <p className="error">{poem.message}</p>}
+            {poem && !(poem instanceof Error) && (
+                <>
+                    <h1 className="title">{poem.title}</h1>
+                    <div className="book-title">{poem.bookTitle}</div>
+                    <h2 className="artist">{poem.artist}</h2>
 
-            <p className="song">
-                {poem.text}
-            </p>
-        </>}
+                    <p className="song">
+                        {poem.text}
+                    </p>
+                </>
+            )}
 
-        <NextSong type="song" />
-    </main>;
+            <NextSong type="song" />
+        </main>
+    );
 }

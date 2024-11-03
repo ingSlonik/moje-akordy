@@ -1,14 +1,18 @@
 import React from "react";
-import { createRoot, hydrateRoot } from 'react-dom/client';
+import { createRoot, hydrateRoot } from "react-dom/client";
 
-import App from "./App";
+import process from "node:process";
 
-const rootElement = document.getElementById('root') as HTMLElement;
+import App from "./App.tsx";
+
+const rootElement = document.getElementById("root") as HTMLElement;
 
 if (process.env.NODE_ENV === "development") {
-    createRoot(rootElement).render(<React.StrictMode>
-        <App />
-    </React.StrictMode>);
+  createRoot(rootElement).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
 } else {
-    hydrateRoot(rootElement, <App />);
+  hydrateRoot(rootElement, <App />);
 }

@@ -9,18 +9,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 20
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - id: 'install'
-      name: 'Install deploy script dependences'
-      run: npm install --save-dev node-ssh tsx
+      - id: "install"
+        name: "Install deploy script dependences"
+        run: npm install --save-dev node-ssh tsx
 
-    - id: 'deploy'
-      name: 'Run deploy script'
-      run: npm run deploy
-      env:
-        CI: true
-        SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+      - id: "deploy"
+        name: "Run deploy script"
+        run: npm run deploy
+        env:
+          CI: true
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}

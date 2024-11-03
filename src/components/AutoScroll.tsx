@@ -4,26 +4,27 @@ const fontSize = 12;
 // const frameRate = 60;
 
 /**
- * 
  * @param speed Speed in ms for one text line.
- * @returns 
+ * @returns
  */
 export default function AutoScroll({ speed = 1000 }: { speed: number }) {
-    const [scroll, setScroll] = useState(false);
+  const [scroll, setScroll] = useState(false);
 
-    useEffect(() => {
-        if (scroll) return;
+  useEffect(() => {
+    if (scroll) return;
 
-        // const shift = Math.ceil(frameRate * fontSize / speed);
-        const frameRate = speed / fontSize;
-        const shift = 1;
-        const int = setInterval(() => {
-            window.scrollTo(0, window.scrollY + shift);
-        }, frameRate);
-        return () => clearInterval(int);
-    }, [scroll, speed]);
+    // const shift = Math.ceil(frameRate * fontSize / speed);
+    const frameRate = speed / fontSize;
+    const shift = 1;
+    const int = setInterval(() => {
+      window.scrollTo(0, window.scrollY + shift);
+    }, frameRate);
+    return () => clearInterval(int);
+  }, [scroll, speed]);
 
-    return <div className="auto-scroll">
-        <button onClick={() => setScroll(!scroll)}>Auto scroll ({scroll ? "off" : "on"})</button>
-    </div>;
+  return (
+    <div className="auto-scroll">
+      <button onClick={() => setScroll(!scroll)}>Auto scroll ({scroll ? "off" : "on"})</button>
+    </div>
+  );
 }
