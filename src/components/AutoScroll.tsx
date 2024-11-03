@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const fontSize = 12;
 // const frameRate = 60;
@@ -7,17 +7,20 @@ const fontSize = 12;
  * @param speed Speed in ms for one text line.
  * @returns
  */
-export default function AutoScroll({ speed = 1000 }: { speed: number }) {
+export default function AutoScroll(
+  { speed = 1000, refScroll }: { speed: number; refScroll: React.RefObject<HTMLDivElement> },
+) {
   const [scroll, setScroll] = useState(false);
 
   useEffect(() => {
-    if (scroll) return;
+    const element = refScroll.current;
+    if (scroll || !element) return;
 
     // const shift = Math.ceil(frameRate * fontSize / speed);
     const frameRate = speed / fontSize;
     const shift = 1;
     const int = setInterval(() => {
-      window.scrollTo(0, window.scrollY + shift);
+      element.scrollTo(0, element.scrollTop + shift);
     }, frameRate);
     return () => clearInterval(int);
   }, [scroll, speed]);

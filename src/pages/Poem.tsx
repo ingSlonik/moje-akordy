@@ -30,22 +30,25 @@ export default function PoemPage({ file, title }: { file: string; title: string 
     }, [poem]);
 
     return (
-        <main>
-            {poem === null && <p>Báseň se načítá...</p>}
-            {poem instanceof Error && <p className="error">{poem.message}</p>}
-            {poem && !(poem instanceof Error) && (
-                <>
-                    <h1 className="title">{poem.title}</h1>
-                    <div className="book-title">{poem.bookTitle}</div>
-                    <h2 className="artist">{poem.artist}</h2>
+        <>
+            <main>
+                <div className="content">
+                    {poem === null && <p>Báseň se načítá...</p>}
+                    {poem instanceof Error && <p className="error">{poem.message}</p>}
+                    {poem && !(poem instanceof Error) && (
+                        <>
+                            <h1 className="title">{poem.title}</h1>
+                            <div className="book-title">{poem.bookTitle}</div>
+                            <h2 className="artist">{poem.artist}</h2>
 
-                    <p className="song">
-                        {poem.text}
-                    </p>
-                </>
-            )}
-
+                            <p className="song">
+                                {poem.text}
+                            </p>
+                        </>
+                    )}
+                </div>
+            </main>
             <NextSong type="song" />
-        </main>
+        </>
     );
 }

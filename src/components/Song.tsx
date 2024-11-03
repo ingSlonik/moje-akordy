@@ -1,13 +1,12 @@
 import { Fragment, useState } from "react";
 
-import AutoScroll from "./AutoScroll.tsx";
 import Ranking from "./Ranking.tsx";
 
 import { SongDetail } from "../../types.d.ts";
 
 const chords = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 
-export default function Song({ title, artist, text, rating, scrollSpeed }: SongDetail) {
+export default function Song({ title, artist, text, rating }: SongDetail) {
   const basicChord = getBasicChord(text);
 
   const [transposition, setTransposition] = useState(basicChord);
@@ -18,8 +17,6 @@ export default function Song({ title, artist, text, rating, scrollSpeed }: SongD
 
   return (
     <>
-      <AutoScroll speed={scrollSpeed} />
-
       <h1 className="title">{title}</h1>
       <h2 className="artist">{artist}</h2>
       <Ranking ranking={rating} />
