@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { RenderAnimationProps, Router } from "../easy-router/index.tsx";
+import { RenderAnimationProps, Router } from "easy-page-router/react.js";
 
 import HomePage from "./pages/Home.tsx";
 import SongPage from "./pages/Song.tsx";

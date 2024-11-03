@@ -15,7 +15,7 @@ export default function SongPage({ file }: { file: string }) {
             document.title = `${song.title} - ${song.artist} | Fílův zpěvník`;
         }
     }, [song]);
-    console.log(song);
+
     return (
         <>
             {song && !(song instanceof Error) && <AutoScroll speed={song.scrollSpeed} refScroll={refScroll} />}

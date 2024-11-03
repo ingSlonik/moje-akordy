@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "../../easy-router/index.tsx";
+import { Link } from "easy-page-router/react.js";
 
 import Ranking from "./Ranking.tsx";
 

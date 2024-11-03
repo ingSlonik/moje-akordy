@@ -1,7 +1,6 @@
-import React from "react";
-import { Link } from "../../easy-router";
+import { Link } from "easy-page-router/react.js";
 
-import { useSongs } from "../../services/hooks";
+import { useSongs } from "../../services/hooks.ts";
 
 export default function NextSong({ type }: { type: "song" | "poem" }) {
   const songs = useSongs();

@@ -1,4 +1,4 @@
-import { Link, RouterProvider } from "../easy-router/index.tsx";
+import { Link, RouterProvider } from "easy-page-router/react.js";
 import PageRouter from "./Router.tsx";
 
 const logo64 = new URL(

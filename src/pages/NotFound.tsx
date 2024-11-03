@@ -1,4 +1,4 @@
-import { Link } from "../../easy-router/index.tsx";
+import { Link } from "easy-page-router/react.js";
 
 export default function NotFoundPage() {
     return (
