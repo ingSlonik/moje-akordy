@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import { useTitle } from "easy-page-router/react";
 
 import Song from "../components/Song.tsx";
 import NextSong from "../components/NextSong.tsx";
@@ -7,14 +8,13 @@ import AutoScroll from "../components/AutoScroll.tsx";
 
 export default function SongPage({ file }: { file: string }) {
     const song = useSong(file);
-
     const refScroll = useRef(null);
 
-    useEffect(() => {
-        if (song && !(song instanceof Error)) {
-            document.title = `${song.title} - ${song.artist} | Fílův zpěvník`;
-        }
-    }, [song]);
+    const title = (song && !(song instanceof Error))
+        ? `${song.title} - ${song.artist} | Fílův zpěvník`
+        : "Fílův zpěvník";
+
+    useTitle(title);
 
     return (
         <>

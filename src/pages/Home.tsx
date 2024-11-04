@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useSongs } from "../../services/hooks.ts";
+import { useTitle } from "easy-page-router/react";
 
+import { useSongs } from "../../services/hooks.ts";
 import SongTable from "../components/SongTable.tsx";
 
 /* TODO
@@ -12,8 +13,10 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   const songs = useSongs();
-
   const [show, setShow] = useState(false);
+
+  useTitle("Fílův zpěvník");
+
   return (
     <main>
       <div className="content">

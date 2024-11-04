@@ -1,6 +1,8 @@
-import { Link } from "easy-page-router/react.js";
+import { Link, useTitle } from "easy-page-router/react";
 
 export default function NotFoundPage() {
+    useTitle("Píseň nenalezena | Fílův zpěvník");
+
     return (
         <main>
             <div className="content">

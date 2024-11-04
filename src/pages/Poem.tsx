@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useTitle } from "easy-page-router/react";
+
 import { usePoem } from "../../services/hooks.ts";
 
 import NextSong from "../components/NextSong.tsx";
@@ -23,11 +24,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default function PoemPage({ file, title }: { file: string; title: string }) {
     const poem = usePoem(file, title);
 
-    useEffect(() => {
-        if (poem && !(poem instanceof Error)) {
-            document.title = `${poem.title} - ${poem.artist} (${poem.bookTitle}) | Fílův zpěvník`;
-        }
-    }, [poem]);
+    const pageTitle = (poem && !(poem instanceof Error))
+        ? `${poem.title} - ${poem.artist} (${poem.bookTitle}) | Fílův zpěvník`
+        : "Fílův zpěvník";
+    useTitle(pageTitle);
 
     return (
         <>
