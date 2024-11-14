@@ -3,8 +3,8 @@
 % 20
 
 [F], [A], [B], [C]
-Je [F]den.Tak [A]pojď Marie ven.
-Budeme [B]žít. [A] házet [C]šutry do oken.
+Je [F]den. Tak [A]pojď Marie ven.
+Budeme [B]žít. A házet [C]šutry do oken.
 Je [F]dva. Necháme [A]doma trucovat.
 Když [B]nechtějí - nemusí. [C]Nebudem se vnucovat.
 Jémine. [F]Všechno [A]zlý jednou pomine.

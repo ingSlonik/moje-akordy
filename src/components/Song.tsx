@@ -74,7 +74,12 @@ function getBasicChord(text: string) {
   return "C";
 }
 
-function getTransposedChord(chord: string, transpositionShift: number) {
+function getTransposedChord(chord: string, transpositionShift: number): string {
+  if (chord.includes("/")) {
+    return chord.split("/")
+      .map(c => getTransposedChord(c, transpositionShift))
+      .join("/");
+  }
   const isSharp = chord.charAt(1) === "#";
   const chordBase = chord.substring(0, isSharp ? 2 : 1);
 
