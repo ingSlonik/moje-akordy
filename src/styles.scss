@@ -19,6 +19,42 @@ body {
   height: 100%;
 }
 
+label {
+  display: block;
+  margin-top: 16px;
+  font-weight: 500;
+  text-align: left;
+  padding-left: 8px;
+}
+
+input,
+textarea {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  font-size: 18px;
+  font-family: "Baloo Bhai 2", serif;
+  padding: 8px 16px;
+  border-radius: 4px;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+  field-sizing: content;
+}
+
+input[type=checkbox] {
+  display: inline-block;
+  width: auto;
+  scale: 1.4;
+  margin-right: 16px;
+}
+
 nav {
   position: fixed;
   z-index: 5;
@@ -30,6 +66,16 @@ nav {
   background-color: rgba(255, 255, 255, 0.8);
   border-bottom: 2px solid green;
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.5);
+
+  .content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .admin-button {
+      font-size: 14px;
+    }
+  }
 }
 
 .content {

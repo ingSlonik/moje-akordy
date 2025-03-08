@@ -15,25 +15,24 @@ const logo192 = new URL(
 );
 
 export default function App() {
-    return (
-        <RouterProvider>
-            <nav>
-                <div className="content">
-                    <Link to="/">
-                        <img
-                            alt="Logo | Fílův zpěvník"
-                            src={logo64.href}
-                            srcSet={`${logo192.href} 3x, ${logo128.href} 2x, ${logo64.href} 1x`}
-                        />
-                        {/* <span className="logo" /> */}
-                        <span>Fílův zpěvník</span>
-                    </Link>
-                </div>
-            </nav>
+    return <RouterProvider>
+        <nav>
+            <div className="content">
+                <Link to="/">
+                    <img
+                        alt="Logo | Fílův zpěvník"
+                        src={logo64.href}
+                        srcSet={`${logo192.href} 3x, ${logo128.href} 2x, ${logo64.href} 1x`}
+                    />
+                    {/* <span className="logo" /> */}
+                    <span>Fílův zpěvník</span>
+                </Link>
+                <Link className="admin-button" to="/admin">Udělat změny</Link>
+            </div>
+        </nav>
 
-            <PageRouter />
-        </RouterProvider>
-    );
+        <PageRouter />
+    </RouterProvider>;
 }
 
 // Fix iOS safari issus with viewport

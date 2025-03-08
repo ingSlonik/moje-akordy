@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { RenderAnimationProps, Router } from "easy-page-router/react";
 
 import HomePage from "./pages/Home";
 import SongPage from "./pages/Song";
 import PoemPage from "./pages/Poem";
 import NotFoundPage from "./pages/NotFound";
+import Admin from "./pages/admin/Admin";
 
 export default function PageRouter() {
     return (
@@ -14,6 +15,10 @@ export default function PageRouter() {
                 renderPage={({ path }) => {
                     if (path[0] === "404") {
                         return <NotFoundPage />;
+                    } else if (path[0] === "admin") {
+                        return <Suspense fallback={<h1>Načítá se...</h1>}>
+                            <Admin />
+                        </Suspense>;
                     } else if (path[0] && path[1]) {
                         return <PoemPage file={path[0]} title={path[1]} />;
                     } else if (path[0]) {

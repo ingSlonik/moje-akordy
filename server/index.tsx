@@ -1,6 +1,7 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readdir, readFile, stat, writeFile } from "node:fs/promises";
 import express, { Request, Response } from "express";
 import { parse, resolve } from "node:path";
+import { existsSync } from "node:fs";
 import process from "node:process";
 import jwt from "jsonwebtoken";
 import cors from "cors";
@@ -17,7 +18,6 @@ import { location } from "../services/common";
 import App from "../src/App";
 
 import { API, Song } from "../types";
-
 
 
 const PORT = process.env.PORT || 1010;
@@ -108,6 +108,11 @@ setAPIBackend<API>(app, {
         const song = parseSong(text);
         return song;
     },
+    async getSongRaw({ file }) {
+        const path = resolve(dirSongs, file + ".md");
+        const text = await readFile(path, "utf-8");
+        return text;
+    },
     async getPoem({ file, title }) {
         const path = resolve(dirPoems, file + ".md");
         const text = await readFile(path, "utf-8");
@@ -120,19 +125,37 @@ setAPIBackend<API>(app, {
 
     // ----------------------------- Admin -------------------------------------
     async addLogin({ username, password }) {
-        if (username === "admin" && sha1(password) === "825abbd61abaa4e3988258e5bb3c3fb9e61afe8d") {
-            const name = "Filip Paulů";
+        if (username === "admin" && sha1(password) === "69432c1f19d153b7269d56beb4a20d192299dfc1") {
+            const name = "Já nebo Zůza";
             const token = jwt.sign({
                 sub: "admin",
                 name,
                 iat: Math.floor(Date.now() / 1000),
-                exp: Math.floor(Date.now() / 1000) + 60 * 60, // one hour
+                exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30, // one month
             }, JWT_SECRET);
 
             return { name, token };
         }
         throw new Error("Invalid credentials");
-    }
+    },
+    async addSong({ file }, req, res) {
+        checkLogin(req, res);
+
+        const path = resolve(dirSongs, file + ".md");
+        if (existsSync(path))
+            throw new Error("File already exists!");
+
+        await writeFile(path, `# ${file}\n@ Zpěvák\n$ 1000 $\n% 0\n\n`, "utf-8");
+    },
+    async updateSong({ file, text }, req, res) {
+        checkLogin(req, res);
+
+        const path = resolve(dirSongs, file + ".md");
+        if (!existsSync(path))
+            throw new Error("File doesn't exist!");
+
+        await writeFile(path, text, "utf-8");
+    },
 });
 
 // --------------------------------- SSR ---------------------------------------

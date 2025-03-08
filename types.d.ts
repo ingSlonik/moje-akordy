@@ -5,10 +5,13 @@ export type API = APIDefinition<{
   // countdown
   getSongs: Endpoint<{}, Song[]>,
   getSong: Endpoint<{ file: string }, SongDetail>,
+  getSongRaw: Endpoint<{ file: string }, string>,
   getPoem: Endpoint<{ file: string, title: string }, PoemDetail>,
 
   // admin
   addLogin: Endpoint<{ username: string, password: string }, { name: string, token: string }>,
+  addSong: Endpoint<{ file: string }, void>,
+  updateSong: Endpoint<{ file: string, text: string }, void>,
 }>;
 // ---------------------- Types --------------------------
 
