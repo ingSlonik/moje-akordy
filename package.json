@@ -11,6 +11,7 @@
     "deploy": "tsx deploy.ts"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
     "easy-page-router": "^0.1.8",

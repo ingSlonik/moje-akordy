@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useRouter } from "easy-page-router/react";
+import Editor from '@monaco-editor/react';
+
+import Ranking from "@/components/Ranking";
 import { useHead } from "../../../services/common";
 import { api, setAuthorizationHeader, useApi } from "../../../services/api";
-import { useRouter } from "easy-page-router/react";
-import Ranking from "@/components/Ranking";
 
 export default function Admin() {
     const { path } = useRouter();
@@ -151,7 +153,18 @@ function EditSongs({ onLogOut }: { onLogOut: () => void }) {
         </div>
         <div style={{ flexGrow: 4, flexBasis: 100, paddingRight: 20 }}>
             <h2>{songFile}</h2>
-            <textarea value={editSong} onChange={e => setEditSong(e.target.value)} />
+            <Editor
+                height="calc(100vh - 200px)"
+                defaultLanguage="markdown" // Nastav jazyk na Markdown
+                value={editSong}
+                onChange={value => setEditSong(value || "")}
+                theme="vs" // Světlý motiv (vs)
+                options={{
+                    minimap: { enabled: true, renderCharacters: false },
+                    automaticLayout: true,
+                    wordWrap: 'on', // Zalamování řádků
+                }}
+            />
             <button onClick={handleSave}>Uložit změny</button>
         </div>
     </div>
