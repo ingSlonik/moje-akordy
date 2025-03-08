@@ -65,7 +65,7 @@ export default function SongTable(props: { songs: Song[] }) {
         <tbody>
           {songs.length < 1 && (
             <tr>
-              <td colSpan={3} style={{ textAlign: "center" }}>
+              <td colSpan={4} style={{ textAlign: "center" }}>
                 To co hledáš tu není...
               </td>
             </tr>

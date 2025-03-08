@@ -19,6 +19,7 @@ import App from "../src/App";
 
 import { API, Song } from "../types";
 
+global.React = React;
 
 const PORT = process.env.PORT || 1010;
 const ORIGIN = "https://akordy.paulu.cz";
