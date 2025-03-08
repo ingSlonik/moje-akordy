@@ -1,56 +1,68 @@
 import { readdir, readFile, stat } from "node:fs/promises";
+import express, { Request, Response } from "express";
 import { parse, resolve } from "node:path";
 import process from "node:process";
-import compression from "compression";
-import express from "express";
+import jwt from "jsonwebtoken";
 import cors from "cors";
+import sha1 from "sha1";
 
 import React from "react";
-import { renderToString } from "react-dom/server";
 
-import { parsePoem, parseSong } from "../services/parser.ts";
-import { setRenderingData } from "../services/renderingData.ts";
-import { location } from "../services/common.ts";
-import { getImageName } from "../services/imageNamer.ts";
+import { renderToHTML } from "ssr-hook/server";
+import { APIError, setAPIBackend } from "typed-client-server-api";
 
-import { RenderingData, Song } from "../types.d.ts";
+import { parsePoem, parseSong } from "../services/parser";
+import { location } from "../services/common";
 
-global.React = React;
+import App from "../src/App";
 
-const dirSongs = resolve(process.cwd(), "public", "songs");
-const dirPoems = resolve(process.cwd(), "public", "poems");
-const indexPath = resolve(process.cwd(), "dist", "index.html");
+import { API, Song } from "../types";
 
-const image = location + "/icon-512x512.png";
+
 
 const PORT = process.env.PORT || 1010;
+const ORIGIN = "https://akordy.paulu.cz";
+const LOCALHOST = `http://localhost:${PORT}`;
+
+const JWT_SECRET = "VemKytaruAJeď:P";
+
+const INDEX_HTML_PATH = resolve(process.cwd(), "dist", "index.html");
+const dirPoems = resolve(process.cwd(), "public", "poems");
+const dirSongs = resolve(process.cwd(), "public", "songs");
 
 const app = express();
-app.use(compression({ level: 9 }));
 
 if (process.env.NODE_ENV === "development") {
     console.log("Starting development server...");
     app.use(cors());
 }
 
-app.get("/", async (req, res) => {
-    const songs = await getSongs();
-
-    const html = await getRenderedHTML(
-        location + req.url,
-        "Fílův zpěvník",
-        // eslint-disable-next-line max-len
-        "Osobní zpěvník Fíly! Obsahuje jak písně s akordy tak proložní básničkama. Je úplně bez reklam! A má auto scroll!",
-        image,
-        { songs },
-    );
-
-    res.set("Content-Type", "text/html");
-    res.send(html);
+// ---------------------------- SSR for index ----------------------------------
+app.get(["/", "/index.html"], async (req, res) => {
+    try {
+        const indexHtml = await readFile(INDEX_HTML_PATH, "utf-8");
+        const html = await renderToHTML(ORIGIN, req.url, indexHtml, <App />);
+        res.set("Content-Type", "text/html");
+        res.send(html);
+    } catch (e) {
+        console.error("SSR error:", e);
+        res.status(500);
+        res.json({ message: "Internal server error" });
+    }
 });
 
 app.use(express.static("dist"));
 app.use(express.static("public"));
+
+// --------------------------------- SEO ---------------------------------------
+app.get("/robots.txt", (_, res) => {
+    res.type("text/plain");
+    res.send(`User-agent: *
+Disallow: /admin/
+Allow: /
+
+Sitemap: ${ORIGIN}/sitemap.xml`);
+});
 
 app.get("/sitemap.xml", async (req, res) => {
     const songs = await getSongs();
@@ -74,168 +86,98 @@ app.get("/sitemap.xml", async (req, res) => {
     ];
     res.set("Content-Type", "text/xml");
     res.send(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${
-        sitemap.map((s) =>
-            `<url>
+${sitemap.map((s) => `<url>
 <loc>${s.url}</loc>
 <lastmod>${s.lastModified}</lastmod>
 <changefreq>${s.changeFrequency}</changefreq>
 <priority>${s.priority}</priority>
-</url>`
-        ).join("\n")
-    }
+</url>` ).join("\n")}
 </urlset>`);
 });
 
-app.get("/api/song", async (req, res) => {
-    const songs = await getSongs();
-    res.json(songs);
-});
-app.get("/api/song/:file", async (req, res) => {
-    try {
-        const file = req.params.file + ".md";
-        const path = resolve(dirSongs, file);
+// --------------------------------- API ---------------------------------------
+app.use(express.json({ limit: "0.5MB" }));
+
+setAPIBackend<API>(app, {
+    async getSongs() {
+        return getSongs();
+    },
+    async getSong({ file }) {
+        const path = resolve(dirSongs, file + ".md");
         const text = await readFile(path, "utf-8");
         const song = parseSong(text);
-        res.json(song);
-    } catch (e) {
-        res.status(404).send(e);
-    }
-});
-app.get("/api/poem/:file/:title", async (req, res) => {
-    try {
-        const file = req.params.file + ".md";
-        const title = req.params.title;
-        const path = resolve(dirPoems, file);
+        return song;
+    },
+    async getPoem({ file, title }) {
+        const path = resolve(dirPoems, file + ".md");
         const text = await readFile(path, "utf-8");
         const poem = parsePoem(text, title);
-        res.json(poem);
-    } catch (e) {
-        res.status(404).send(e);
+        if (!poem)
+            throw new APIError("Poem not found", 404);
+
+        return poem;
+    },
+
+    // ----------------------------- Admin -------------------------------------
+    async addLogin({ username, password }) {
+        if (username === "admin" && sha1(password) === "825abbd61abaa4e3988258e5bb3c3fb9e61afe8d") {
+            const name = "Filip Paulů";
+            const token = jwt.sign({
+                sub: "admin",
+                name,
+                iat: Math.floor(Date.now() / 1000),
+                exp: Math.floor(Date.now() / 1000) + 60 * 60, // one hour
+            }, JWT_SECRET);
+
+            return { name, token };
+        }
+        throw new Error("Invalid credentials");
     }
 });
 
-// 404
-app.get("/404", async (req, res) => {
-    const html = await getRenderedHTML(
-        location + req.url,
-        "404 | Píseň nenalezena | Fílův zpěvník",
-        "404 Píseň nenalezena, ale zkoušej to dál, je tu velká hromada písní ;)",
-        image,
-        {},
-    );
-
-    res.set("Content-Type", "text/html");
-    res.send(html);
-});
-
-// song
-app.get("/:file", async (req, res) => {
+// --------------------------------- SSR ---------------------------------------
+app.get("*", async (req, res) => {
     try {
-        const file = req.params.file + ".md";
-        const path = resolve(dirSongs, file);
-        const text = await readFile(path, "utf-8");
-        const song = parseSong(text);
-
-        const html = await getRenderedHTML(
-            location + req.url,
-            `${song.title} - ${song.artist} | Fílův zpěvník`,
-            `${song.title} - ${song.artist}\n${song.content.slice(0, 100)}`,
-            image,
-            { song },
-        );
-
+        const indexHtml = await readFile(INDEX_HTML_PATH, "utf-8");
+        const html = await renderToHTML(ORIGIN, req.url, indexHtml, <App />);
         res.set("Content-Type", "text/html");
         res.send(html);
     } catch (e) {
-        console.log("Error:", req.url, e);
-        res.redirect(302, "/404");
+        console.error("SSR error:", e);
+        res.status(500);
+        res.json({ message: "Internal server error" });
     }
 });
-// poem
-app.get("/:file/:title", async (req, res) => {
+
+// ----------------------------- Run server ------------------------------------
+app.listen(PORT, () => console.log(`Moje akordy app listening on ${LOCALHOST}`));
+
+// ----------------------------- Helpers ------------------------------------
+function checkLogin(req: Request, res: Response): string {
     try {
-        const file = req.params.file + ".md";
-        const title = req.params.title;
-        const path = resolve(dirPoems, file);
-        const text = await readFile(path, "utf-8");
-        const poem = parsePoem(text, title);
+        const authorization = req.headers.authorization;
+        if (!authorization)
+            throw new Error("Unauthorized");
 
-        if (!poem) {
-            return res.redirect(302, "/404");
+        const token = authorization.split(" ")[1];
+        const payload = jwt.verify(token, JWT_SECRET); // Expiration is checking here
+
+        if (
+            payload
+            && typeof payload === "object"
+            && typeof payload.sub === "string"
+            && typeof payload.name === "string"
+            && typeof payload.iat === "number"
+            && typeof payload.exp === "number"
+            && payload.sub === "admin"
+        ) {
+            return payload.name;
         }
 
-        const html = await getRenderedHTML(
-            location + req.url,
-            `${poem.title} - ${poem.artist} (${poem.bookTitle}) | Fílův zpěvník`,
-            `${poem.title} - ${poem.artist} (${poem.bookTitle}) \n${text.slice(0, 100)}`,
-            image,
-            { poem },
-        );
+        throw new Error("Unauthorized");
 
-        res.set("Content-Type", "text/html");
-        res.send(html);
     } catch (e) {
-        console.log("Error:", req.url, e);
-        res.redirect(302, "/404");
-    }
-});
-
-app.listen(PORT, () => console.log(`Moje akordy app listening on http://localhost:${PORT}`));
-
-async function getRenderedHTML(
-    url: string,
-    title: string,
-    description: string,
-    image: string,
-    renderingData: Partial<RenderingData>,
-) {
-    setRenderingData(renderingData, url);
-
-    let html = await readFile(indexPath, "utf-8");
-    html = html.replace(
-        "<head>",
-        `<head>${
-            renderToString(
-                <>
-                    <title>{title}</title>
-                    <meta name="description" content={description} />
-
-                    <meta property="og:title" content={title} />
-                    <meta property="og:description" content={description} />
-                    <meta property="og:image" content={image} />
-                    <meta property="og:url" content={url} />
-                </>,
-            )
-        }`,
-    );
-
-    // @ts-expect-error It is extended returning original URL
-    global.URL = URLWithTransformer;
-    const App = (await import("../src/App.tsx")).default;
-    const app = renderToString(<App />);
-    global.URL = URLOriginal;
-
-    // eslint-disable-next-line max-len
-    html = html.replace(
-        `<div id="root"></div>`,
-        `<div id="root">${app}</div><script type="text/javascript">window.RENDERING_DATA=${
-            JSON.stringify(renderingData)
-        };</script>`,
-    );
-
-    return html;
-}
-
-const URLOriginal = URL;
-class URLWithTransformer extends URLOriginal {
-    constructor(path: string, base?: string | URL) {
-        super(path, base);
-        if (typeof base === "string" && base.startsWith("file:")) {
-            const name = getImageName(new URLOriginal(path, `file://${process.cwd()}`));
-            return new URLOriginal(name, location);
-        }
-        return new URLOriginal(path, base);
+        throw new APIError((e as Error).message || "Unauthorized", 401);
     }
 }
 

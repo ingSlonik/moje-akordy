@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { RenderAnimationProps, Router } from "easy-page-router/react.js";
+import { RenderAnimationProps, Router } from "easy-page-router/react";
 
-import HomePage from "./pages/Home.tsx";
-import SongPage from "./pages/Song.tsx";
-import PoemPage from "./pages/Poem.tsx";
-import NotFoundPage from "./pages/NotFound.tsx";
+import HomePage from "./pages/Home";
+import SongPage from "./pages/Song";
+import PoemPage from "./pages/Poem";
+import NotFoundPage from "./pages/NotFound";
 
 export default function PageRouter() {
     return (

@@ -1,21 +1,23 @@
 import { useState } from "react";
+import { useSSRHook } from "ssr-hook";
 import { useTitle } from "easy-page-router/react";
 
-import { useSongs } from "../../services/hooks.ts";
-import SongTable from "../components/SongTable.tsx";
+import SongTable from "../components/SongTable";
+import { useHead } from "../../services/common";
+import { Song } from "../../types";
 
-/* TODO
-export const metadata: Metadata = {
-    title: "Fílův zpěvník",
-    description: "Osobní zpěvník Fíly! Obsahuje jak písně s akordy tak proložní básničkama. Je úplně bez reklam! A má auto scroll!",
-};
-*/
 
 export default function HomePage() {
-  const songs = useSongs();
   const [show, setShow] = useState(false);
 
-  useTitle("Fílův zpěvník");
+  const [songs, error, isLoading, reload] = useSSRHook<Song[]>(`/api/songs`);
+
+  useTitle(`Fílův zpěvník`);
+
+  useHead({
+    title: "Fílův zpěvník",
+    description: "Osobní zpěvník Fíly! Obsahuje jak písně s akordy tak proložní básničkama. Je úplně bez reklam! A má auto scroll!"
+  });
 
   return (
     <main>
@@ -49,8 +51,8 @@ export default function HomePage() {
         <br />
         <br />
 
-        {songs === null && <p>Písně se načítají...</p>}
-        {songs instanceof Error && <p className="error">{songs.message}</p>}
+        {isLoading && <p>Písně se načítají...</p>}
+        {error && <p className="error">{error.message}</p>}
         {songs && !(songs instanceof Error) && <SongTable songs={songs} />}
       </div>
     </main>

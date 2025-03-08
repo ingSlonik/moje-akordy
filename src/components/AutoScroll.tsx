@@ -8,7 +8,7 @@ const fontSize = 12;
  * @returns
  */
 export default function AutoScroll(
-  { speed = 1000, refScroll }: { speed: number; refScroll: React.RefObject<HTMLDivElement> },
+  { speed = 1000, refScroll }: { speed: number; refScroll: React.RefObject<null | HTMLDivElement> },
 ) {
   const [scroll, setScroll] = useState(false);
 

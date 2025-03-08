@@ -1,17 +1,14 @@
-// deno-lint-ignore-file no-process-globals
 import React from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
+import { setSSROrigin } from "ssr-hook";
 
-import App from "./App.tsx";
+import App from "./App";
 
 const rootElement = document.getElementById("root") as HTMLElement;
 
-declare global {
-  // deno-lint-ignore no-explicit-any
-  const process: any;
-}
 
 if (process.env.NODE_ENV === "development") {
+  setSSROrigin("http://localhost:1010"); // development server
   createRoot(rootElement).render(
     <React.StrictMode>
       <App />

@@ -1,8 +1,8 @@
 import { Fragment, useState } from "react";
 
-import Ranking from "./Ranking.tsx";
+import Ranking from "./Ranking";
 
-import { SongDetail } from "../../types.d.ts";
+import { SongDetail } from "../../types";
 
 const chords = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 

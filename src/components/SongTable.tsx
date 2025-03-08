@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { Link } from "easy-page-router/react.js";
+import { Link } from "easy-page-router/react";
 
-import Ranking from "./Ranking.tsx";
+import Ranking from "./Ranking";
 
-import { Song } from "../../types.d.ts";
+import { Song } from "../../types";
 
 export default function SongTable(props: { songs: Song[] }) {
   const [search, setSearch] = useState("");

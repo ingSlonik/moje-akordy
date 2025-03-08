@@ -1,11 +1,12 @@
 import { Link } from "easy-page-router/react.js";
 
-import { useSongs } from "../../services/hooks.ts";
+import { useSSRHook } from "ssr-hook";
+import { Song } from "../../types.js";
 
 export default function NextSong({ type }: { type: "song" | "poem" }) {
-  const songs = useSongs();
+  const [songs, error, isLoading, reload] = useSSRHook<Song[]>(`/api/songs`);
 
-  if (!songs || songs instanceof Error) {
+  if (!songs) {
     return null;
   }
 

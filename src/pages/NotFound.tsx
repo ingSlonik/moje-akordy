@@ -1,7 +1,11 @@
-import { Link, useTitle } from "easy-page-router/react";
+import { Link } from "easy-page-router/react";
+import { useHead } from "../../services/common";
 
 export default function NotFoundPage() {
-    useTitle("Píseň nenalezena | Fílův zpěvník");
+    useHead({
+        title: "Píseň nenalezena | Fílův zpěvník",
+        description: "Osobní zpěvník Fíly! Obsahuje jak písně s akordy tak proložní básničkama. Je úplně bez reklam! A má auto scroll!"
+    });
 
     return (
         <main>

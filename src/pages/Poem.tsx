@@ -1,51 +1,39 @@
-import { useTitle } from "easy-page-router/react";
+import { useSSRHook } from "ssr-hook";
 
-import { usePoem } from "../../services/hooks.ts";
+import NextSong from "../components/NextSong";
+import { useHead } from "../../services/common";
 
-import NextSong from "../components/NextSong.tsx";
+import { PoemDetail } from "../../types";
 
-/* TODO
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const poem = await getPoem(params);
-    if (!poem) return {
-        title: `404 | Fílův zpěvník`,
-        description: `404 |Píseň nenalezena`,
-    };
-
-    const { title, artist, bookTitle, text } = poem;
-
-    return {
-        title: `${title} - ${artist} (${bookTitle}) | Fílův zpěvník`,
-        description: `${title} - ${artist} (${bookTitle}) \n${text.slice(0, 100)}`,
-    };
-}
-*/
 
 export default function PoemPage({ file, title }: { file: string; title: string }) {
-    const poem = usePoem(file, title);
+
+    const [poem, error, isLoading, reload] = useSSRHook<PoemDetail>(`/api/poem?file=${decodeURIComponent(file)}&title=${decodeURIComponent(title)}`);
 
     const pageTitle = (poem && !(poem instanceof Error))
         ? `${poem.title} - ${poem.artist} (${poem.bookTitle}) | Fílův zpěvník`
         : "Fílův zpěvník";
-    useTitle(pageTitle);
+
+    useHead({
+        title,
+        description: poem ? `${poem.title} - ${poem.artist} (${poem.bookTitle}) \n${poem.text.slice(0, 100)}` : pageTitle,
+    })
 
     return (
         <>
             <main>
                 <div className="content">
-                    {poem === null && <p>Báseň se načítá...</p>}
-                    {poem instanceof Error && <p className="error">{poem.message}</p>}
-                    {poem && !(poem instanceof Error) && (
-                        <>
-                            <h1 className="title">{poem.title}</h1>
-                            <div className="book-title">{poem.bookTitle}</div>
-                            <h2 className="artist">{poem.artist}</h2>
+                    {isLoading && <p>Báseň se načítá...</p>}
+                    {error && <p className="error">{error.message}</p>}
+                    {poem && <>
+                        <h1 className="title">{poem.title}</h1>
+                        <div className="book-title">{poem.bookTitle}</div>
+                        <h2 className="artist">{poem.artist}</h2>
 
-                            <p className="song">
-                                {poem.text}
-                            </p>
-                        </>
-                    )}
+                        <p className="song">
+                            {poem.text}
+                        </p>
+                    </>}
                 </div>
             </main>
             <NextSong type="song" />

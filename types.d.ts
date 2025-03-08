@@ -1,8 +1,16 @@
-type RenderingData = {
-  songs?: Song[];
-  song?: null | SongDetail;
-  poem?: null | PoemDetail;
-};
+import type { APIDefinition, Endpoint } from "typed-client-server-api";
+
+// ---------------------- API --------------------------
+export type API = APIDefinition<{
+  // countdown
+  getSongs: Endpoint<{}, Song[]>,
+  getSong: Endpoint<{ file: string }, SongDetail>,
+  getPoem: Endpoint<{ file: string, title: string }, PoemDetail>,
+
+  // admin
+  addLogin: Endpoint<{ username: string, password: string }, { name: string, token: string }>,
+}>;
+// ---------------------- Types --------------------------
 
 export type Song = {
   file: string;
