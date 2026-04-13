@@ -1,6 +1,10 @@
 import { Link, RouterProvider } from "easy-page-router/react";
 import PageRouter from "./Router";
 
+import { init } from "easy-analytics/client";
+
+init("https://paulu.cz/api/easy-analytics");
+
 /*
 const logo64 = new URL(
     "/public/icon.png?as=webp&width=64&height=64",

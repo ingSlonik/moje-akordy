@@ -14,6 +14,7 @@
     "@monaco-editor/react": "^4.7.0",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
+    "easy-analytics": "^1.0.1",
     "easy-page-router": "^0.1.8",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
