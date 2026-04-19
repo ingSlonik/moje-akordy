@@ -51,7 +51,7 @@ export default function Admin() {
         }
     }
 
-    return <main style={{ marginTop: "80px", paddingLeft: "20px", paddingRight: "20px" }}>
+    return <main className={user ? "admin-main" : ""} style={!user ? { marginTop: "80px", paddingLeft: "20px", paddingRight: "20px" } : {}}>
         {!user && <form style={{ width: "400px", margin: "0px auto" }} onSubmit={e => {
             e.preventDefault();
             handleLogin();
@@ -59,13 +59,13 @@ export default function Admin() {
             <h1>Administrace Zpěvníku</h1>
             <p className="page-description">Pokud nejste administrátor, prosím, opusťte tuto oblast!</p>
 
-            {message && <p className="info">{message}</p>}
+            {message && <p className="info" style={{ color: "var(--color-primary)" }}>{message}</p>}
 
             <label>Jméno</label>
             <input type="text" value={username} onChange={e => setUsername(e.target.value)} />
             <label>Heslo</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
-            <input style={{ marginTop: "20px" }} type="submit" value="Přihlásit se" />
+            <input className="btn-primary" style={{ marginTop: "20px" }} type="submit" value="Přihlásit se" />
         </form>}
 
         {user && <>
@@ -104,14 +104,16 @@ function EditSongs({ onLogOut }: { onLogOut: () => void }) {
 
     const [songFile, setSongFile] = useState("");
     const [editSong, setEditSong] = useState("");
-
+    const [originalEditSong, setOriginalEditSong] = useState("");
 
     async function handleSelect(file: string) {
         const [text, error] = await api.getSongRaw({ file });
         if (error) {
             setEditSong(error);
+            setOriginalEditSong(error);
         } else if (text) {
             setEditSong(text);
+            setOriginalEditSong(text);
             setSongFile(file);
         }
     }
@@ -126,46 +128,91 @@ function EditSongs({ onLogOut }: { onLogOut: () => void }) {
     }
 
     async function handleSave() {
+        if (editSong === originalEditSong) return;
+
         await api.updateSong({ file: songFile, text: editSong });
+        setOriginalEditSong(editSong);
         reload();
     }
 
-    return <div style={{ display: "flex" }}>
-        <div style={{ flexGrow: 1, flexBasis: 100, paddingRight: 20, borderRight: "1px solid #888" }}>
-            <button onClick={onLogOut}>Odhlásit se</button>
+    async function handleDelete() {
+        if (!songFile) return;
+        if (!window.confirm(`Opravdu chcete nenávratně smazat píseň: ${songFile}?`)) return;
 
-            {errorSongs && <p className="error">{errorSongs}</p>}
-            <label>Název nového souboru (bez diakritiky a s pomlčkami)</label>
-            <input type="text" value={newSong} onChange={e => setNewSong(e.target.value)} />
-            <button onClick={handleAdd}>Přidat soubor / píseň</button>
+        await api.removeSong({ file: songFile });
+        setSongFile("");
+        setEditSong("");
+        setOriginalEditSong("");
+        reload();
+    }
 
-            {songs && <ul>
-                {songs
-                    .filter(s => s.type === "song")
-                    .sort((a, b) => b.rating - a.rating)
-                    .map(song => <li key={song.file} style={{ marginBottom: 12 }}>
-                        <a onClick={() => handleSelect(song.file)} style={{ display: "block", cursor: "pointer" }}>
-                            {song.title} - {song.artist}
-                            <Ranking ranking={song.rating} />
-                        </a>
-                    </li>)}
-            </ul>}
+    const isDirty = editSong !== originalEditSong;
+
+    return <>
+        <div className="admin-sidebar">
+            <div className="admin-sidebar-header">
+                <h2>Přehled písní</h2>
+                {errorSongs && <p className="error" style={{ color: "var(--color-danger)" }}>{errorSongs}</p>}
+                <label style={{ marginTop: 0 }}>Nový soubor (bez diakritiky)</label>
+                <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                    <input type="text" value={newSong} onChange={e => setNewSong(e.target.value)} placeholder="nazev-pisne" />
+                    <button style={{ width: "auto", padding: "8px 16px" }} className="btn-primary" onClick={handleAdd}>Přidat</button>
+                </div>
+            </div>
+            <div className="admin-sidebar-content">
+                {songs && <ul>
+                    {songs
+                        .filter(s => s.type === "song")
+                        .sort((a, b) => b.rating - a.rating)
+                        .map(song => <li key={song.file} className={songFile === song.file ? "active-song" : ""}>
+                            <a onClick={() => handleSelect(song.file)}>
+                                {song.title} - {song.artist}
+                                <Ranking ranking={song.rating} />
+                            </a>
+                        </li>)}
+                </ul>}
+            </div>
+            <div style={{ padding: "16px", borderTop: "1px solid var(--color-border)" }}>
+                <button onClick={onLogOut} style={{ background: "var(--color-bg)", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>Odhlásit se</button>
+            </div>
         </div>
-        <div style={{ flexGrow: 4, flexBasis: 100, paddingRight: 20 }}>
-            <h2>{songFile}</h2>
-            <Editor
-                height="calc(100vh - 200px)"
-                defaultLanguage="markdown" // Nastav jazyk na Markdown
-                value={editSong}
-                onChange={value => setEditSong(value || "")}
-                theme="vs" // Světlý motiv (vs)
-                options={{
-                    minimap: { enabled: true, renderCharacters: false },
-                    automaticLayout: true,
-                    wordWrap: 'on', // Zalamování řádků
-                }}
-            />
-            <button onClick={handleSave}>Uložit změny</button>
+        <div className="admin-editor-container">
+            {songFile ? (
+                <>
+                    <div className="admin-editor-header">
+                        <h2>{songFile}.md</h2>
+                        <div className="actions">
+                            <button className="btn-danger" style={{ width: "auto" }} onClick={handleDelete}>Smazat</button>
+                            <button
+                                className="btn-primary"
+                                style={{ width: "auto" }}
+                                onClick={handleSave}
+                                disabled={!isDirty}
+                            >
+                                {isDirty ? "Uložit změny *" : "Uloženo"}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="admin-editor-content">
+                        <Editor
+                            height="100%"
+                            defaultLanguage="markdown"
+                            value={editSong}
+                            onChange={value => setEditSong(value || "")}
+                            theme="vs"
+                            options={{
+                                minimap: { enabled: true, renderCharacters: false },
+                                automaticLayout: true,
+                                wordWrap: 'on',
+                            }}
+                        />
+                    </div>
+                </>
+            ) : (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--color-text-muted)" }}>
+                    Vyberte píseň z levého panelu
+                </div>
+            )}
         </div>
-    </div>
+    </>;
 }
