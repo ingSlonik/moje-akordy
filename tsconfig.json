@@ -3,6 +3,7 @@
     "lib": [
       "dom"
     ],
+    "target": "es2020",
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,

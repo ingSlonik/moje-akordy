@@ -1,4 +1,4 @@
-import { Link, RouterProvider } from "easy-page-router/react";
+import { Link, RouterProvider, useRouter } from "easy-page-router/react";
 import PageRouter from "./Router";
 
 import { init } from "easy-analytics/client";
@@ -20,23 +20,24 @@ const logo192 = new URL(
 );
 */
 
+function Nav() {
+    const { path } = useRouter();
+    if (path[0] === "admin") return null;
+
+    return <nav>
+        <div className="content">
+            <Link to="/">
+                <span className="logo" />
+                <span>Fílův zpěvník</span>
+            </Link>
+            <Link className="admin-button" to="/admin">Udělat změny</Link>
+        </div>
+    </nav>;
+}
+
 export default function App() {
     return <RouterProvider>
-        <nav>
-            <div className="content">
-                <Link to="/">
-                    {/* <img
-                        alt="Logo | Fílův zpěvník"
-                        src={logo64.href}
-                        srcSet={`${logo192.href} 3x, ${logo128.href} 2x, ${logo64.href} 1x`}
-                    /> */}
-                    <span className="logo" />
-                    <span>Fílův zpěvník</span>
-                </Link>
-                <Link className="admin-button" to="/admin">Udělat změny</Link>
-            </div>
-        </nav>
-
+        <Nav />
         <PageRouter />
     </RouterProvider>;
 }

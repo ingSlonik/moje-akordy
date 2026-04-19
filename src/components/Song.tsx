@@ -2,7 +2,7 @@ import { Fragment, useState } from "react";
 
 import Ranking from "./Ranking";
 
-import { SongDetail } from "../../types";
+import { SongDetail, SongToken } from "../../types";
 
 const chords = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 
@@ -17,56 +17,70 @@ export default function Song({ title, artist, text, rating }: SongDetail) {
 
   return (
     <>
-      <h1 className="title">{title}</h1>
-      <h2 className="artist">{artist}</h2>
-      <Ranking ranking={rating} />
+      <h1 className="title" style={{ marginBottom: "8px" }}>{title}</h1>
+      <div className="song-meta" style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px", flexWrap: "wrap" }}>
+        <h2 className="artist" style={{ margin: 0, color: "var(--color-text-muted)" }}>{artist}</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "var(--color-bg)", padding: "6px 12px", borderRadius: "var(--radius-full)" }}>
+          <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--color-text-muted)" }}>Umím:</span>
+          <Ranking ranking={rating} />
+        </div>
+      </div>
 
-      <strong>Transpozice</strong>
-      <br />
-      {chords.map((chord, i) => (
-        <Fragment key={chord}>
-          <a
-            style={{
-              cursor: "pointer",
-              color: chord === basicTransposedChord ? "black" : "blue",
-              fontWeight: chord === basicChord || chord === basicTransposedChord ? "bold" : "normal",
-            }}
-            onClick={() => setTransposition(chord)}
-          >
-            {chord}
-          </a>
-          {i < chords.length - 1 && <span>/</span>}
-        </Fragment>
-      ))}
+      <div className="transposition-control" style={{ marginBottom: "24px", background: "var(--color-card-bg)", padding: "16px", borderRadius: "12px", border: "1px solid var(--color-border)", display: "inline-block" }}>
+        <strong style={{ display: "block", marginBottom: "12px", color: "var(--color-text-muted)", fontSize: "14px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Transpozice</strong>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+          {chords.map((chord) => {
+            const isActive = chord === basicTransposedChord;
+            return (
+              <a
+                key={chord}
+                style={{
+                  cursor: "pointer",
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  background: isActive ? "var(--color-primary)" : "transparent",
+                  color: isActive ? "white" : "var(--color-text)",
+                  fontWeight: isActive ? "bold" : "500",
+                  textDecoration: "none",
+                  transition: "var(--transition-fast)"
+                }}
+                onClick={() => setTransposition(chord)}
+              >
+                {chord}
+              </a>
+            );
+          })}
+        </div>
+      </div>
 
-      <p className="song">
-        {text.split(";").map((t, i) => {
-          if (t.startsWith("T")) {
-            return <pre key={i}>{t.substring(1)}</pre>;
-          } else if (t.startsWith("A")) {
-            let chord = t.substring(1);
+      <div className="song">
+        {text.map((token, i) => {
+          if (token.type === "tab") {
+            return <pre key={i}>{token.value}</pre>;
+          } else if (token.type === "chord") {
+            let chord = token.value;
             // replace B to H
             if (chord.startsWith("A#")) chord = "B" + chord.substring(2);
 
             return <sup key={i}>{getTransposedChord(chord, transpositionShift)}</sup>;
-          } else if (t.startsWith("C")) {
-            return <span key={i} className="comment">{t.substring(1).trim()}</span>;
-          } else if (t.startsWith(" ")) {
-            return t.substring(1);
+          } else if (token.type === "comment") {
+            return <span key={i} className="comment">{token.value}</span>;
+          } else if (token.type === "text") {
+            return token.value;
           } else {
             return null;
           }
         })}
-      </p>
+      </div>
     </>
   );
 }
 
-function getBasicChord(text: string) {
-  const chord = text.split(";A");
-  if (!chord[1]) return "C";
+function getBasicChord(tokens: SongToken[]) {
+  const firstChordToken = tokens.find(t => t.type === "chord");
+  if (!firstChordToken) return "C";
 
-  const chordBase = getChordBase(chord[1]);
+  const chordBase = getChordBase(firstChordToken.value);
   if (chords.includes(chordBase)) {
     return chordBase;
   }

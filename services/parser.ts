@@ -8,7 +8,7 @@
  * Content
  * // - comment
  * [x] - chords
- * ``` x ``` - tabs
+ * ```\n x \n``` - tabs
  *
  * Output text
  * "; " - normal text
@@ -17,17 +17,39 @@
  * ";A" - chord
  */
 
-import { PoemDetail, SongDetail } from "../types";
+import { PoemDetail, SongDetail, SongToken } from "../types";
 
 export function parseSong(song: string): SongDetail {
   const { title, artist, scrollSpeed, rating, content } = parseHeaders(song);
 
-  const text = content
-    .replace(/```([\s\S]*?)```/g, (_, p1) => `;T${p1.replaceAll(";", "")}; `)
-    .replace(/\/\/(.*?)\n/g, (_, p1) => `;C${p1}; `)
-    .replace(/\[(.*?)\]/g, (_, p1) => `;A${p1}; `);
+  const tokens: SongToken[] = [];
+  const regex = /(```[\s\S]*?```)|(\/\/[^\n]*)|(\[.*?\])/g;
 
-  return { title, artist, scrollSpeed, rating, content, text };
+  let lastIndex = 0;
+  for (const match of content.matchAll(regex)) {
+    if (match.index !== undefined && match.index > lastIndex) {
+      tokens.push({ type: "text", value: content.slice(lastIndex, match.index) });
+    }
+
+    if (match[1]) {
+      let val = match[1].slice(3, -3);
+      if (val.startsWith("\n")) val = val.substring(1);
+      if (val.endsWith("\n")) val = val.substring(0, val.length - 1);
+      tokens.push({ type: "tab", value: val });
+    } else if (match[2]) {
+      tokens.push({ type: "comment", value: match[2].slice(2).trim() });
+    } else if (match[3]) {
+      tokens.push({ type: "chord", value: match[3].slice(1, -1) });
+    }
+
+    lastIndex = (match.index ?? 0) + match[0].length;
+  }
+
+  if (lastIndex < content.length) {
+    tokens.push({ type: "text", value: content.slice(lastIndex) });
+  }
+
+  return { title, artist, scrollSpeed, rating, content, text: tokens };
 }
 
 function parseHeaders(song: string) {

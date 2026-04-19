@@ -1,4 +1,4 @@
-import { readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { readdir, readFile, stat, writeFile, rm } from "node:fs/promises";
 import express, { Request, Response } from "express";
 import { parse, resolve } from "node:path";
 import { existsSync } from "node:fs";
@@ -22,8 +22,8 @@ import { API, Song } from "../types";
 global.React = React;
 
 const PORT = process.env.PORT || 1010;
-const ORIGIN = "https://akordy.paulu.cz";
 const LOCALHOST = `http://localhost:${PORT}`;
+const ORIGIN = process.env.NODE_ENV === "development" ? LOCALHOST : "https://akordy.paulu.cz";
 
 const JWT_SECRET = "VemKytaruAJeď:P";
 
@@ -126,7 +126,7 @@ setAPIBackend<API>(app, {
 
     // ----------------------------- Admin -------------------------------------
     async addLogin({ username, password }) {
-        if (username === "admin" && sha1(password) === "69432c1f19d153b7269d56beb4a20d192299dfc1") {
+        if (username === "admin" && sha1(password) === "97295c7c77f4ed135a926fbac3d244e40632fef6") {
             const name = "Já nebo Zůza";
             const token = jwt.sign({
                 sub: "admin",
@@ -156,6 +156,15 @@ setAPIBackend<API>(app, {
             throw new Error("File doesn't exist!");
 
         await writeFile(path, text, "utf-8");
+    },
+    async removeSong({ file }, req, res) {
+        checkLogin(req, res);
+
+        const path = resolve(dirSongs, file + ".md");
+        if (!existsSync(path))
+            throw new Error("File doesn't exist!");
+
+        await rm(path);
     },
 });
 

@@ -12,8 +12,15 @@ export type API = APIDefinition<{
   addLogin: Endpoint<{ username: string, password: string }, { name: string, token: string }>,
   addSong: Endpoint<{ file: string }, void>,
   updateSong: Endpoint<{ file: string, text: string }, void>,
+  removeSong: Endpoint<{ file: string }, void>,
 }>;
 // ---------------------- Types --------------------------
+
+export type SongToken =
+  | { type: "text"; value: string }
+  | { type: "chord"; value: string }
+  | { type: "comment"; value: string }
+  | { type: "tab"; value: string };
 
 export type Song = {
   file: string;
@@ -31,7 +38,7 @@ export type SongDetail = {
   scrollSpeed: number;
   rating: number;
   content: string;
-  text: string;
+  text: SongToken[];
 };
 
 export type PoemDetail = {

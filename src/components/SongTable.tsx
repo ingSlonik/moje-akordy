@@ -38,21 +38,40 @@ export default function SongTable(props: { songs: Song[] }) {
 
   return (
     <>
-      <label>
-        Píseň
-        <input type="checkbox" checked={type.includes("song")} onChange={() => handleType("song")} />
-      </label>
-      <label>
-        Báseň
-        <input type="checkbox" checked={type.includes("poem")} onChange={() => handleType("poem")} />
-      </label>
+      <div className="filter-row">
+        <label className="chip-wrapper" style={{ margin: 0 }}>
+          <input 
+            type="checkbox" 
+            className="chip-input"
+            checked={type.includes("song")} 
+            onChange={() => handleType("song")} 
+          />
+          <span className="chip-label">Písně</span>
+        </label>
+        
+        <label className="chip-wrapper" style={{ margin: 0 }}>
+          <input 
+            type="checkbox" 
+            className="chip-input"
+            checked={type.includes("poem")} 
+            onChange={() => handleType("poem")} 
+          />
+          <span className="chip-label">Básně</span>
+        </label>
+      </div>
 
-      <input
-        type="text"
-        placeholder="Hledat dle názvu a autora..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div className="search-container">
+        <svg className="search-icon" xmlns="http://www.w3.org/000000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Hledat dle názvu a autora..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
       <table>
         <thead>
           <tr>
@@ -65,7 +84,7 @@ export default function SongTable(props: { songs: Song[] }) {
         <tbody>
           {songs.length < 1 && (
             <tr>
-              <td colSpan={4} style={{ textAlign: "center" }}>
+              <td colSpan={4} style={{ textAlign: "center", padding: "32px", color: "var(--color-text-muted)" }}>
                 To co hledáš tu není...
               </td>
             </tr>
@@ -75,14 +94,18 @@ export default function SongTable(props: { songs: Song[] }) {
               <td>
                 <Link to={song.type === "song" ? `/${song.file}` : `/${song.file}/${encodeURIComponent(song.title)}`}>
                   {song.title}
-                  {song.bookTitle && ` (${song.bookTitle})`}
+                  {song.bookTitle && <span className="book-title">{song.bookTitle}</span>}
                 </Link>
               </td>
-              <td>{song.artist}</td>
+              <td style={{ color: "var(--color-text-muted)" }}>{song.artist}</td>
               <td>
                 <Ranking ranking={song.rating} />
               </td>
-              <td>{song.type === "song" ? "Píseň" : "Báseň"}</td>
+              <td>
+                <span className={`type-badge type-${song.type}`}>
+                  {song.type === "song" ? "Píseň" : "Báseň"}
+                </span>
+              </td>
             </tr>
           ))}
         </tbody>

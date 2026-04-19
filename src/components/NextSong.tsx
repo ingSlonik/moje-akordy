@@ -29,7 +29,7 @@ export default function NextSong({ type }: { type: "song" | "poem" }) {
       className="next-song"
       to={song.type === "song" ? `/${song.file}` : `/${song.file}/${encodeURIComponent(song.title)}`}
     >
-      {"⇨ "}
+      <svg xmlns="http://www.w3.org/000000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: "8px", verticalAlign: "-2px" }}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       {song.title}
       {song.bookTitle && ` (${song.bookTitle})`}
     </Link>

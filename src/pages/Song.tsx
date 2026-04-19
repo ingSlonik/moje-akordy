@@ -20,7 +20,7 @@ export default function SongPage({ file }: { file: string }) {
     useTitle(title);
     useHead({
         title,
-        description: song ? `${song.title} - ${song.artist} \n${song.text.slice(0, 100)}` : title,
+        description: song ? `${song.title} - ${song.artist} \n${song.text.map(t => t.type === "text" ? t.value : "").join("").slice(0, 100)}` : title,
     })
 
     return (
