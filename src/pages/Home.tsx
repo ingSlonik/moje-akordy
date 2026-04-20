@@ -56,8 +56,8 @@ export default function HomePage() {
             </p>
           </div>
           <button
-            className="btn-secondary"
-            style={{ marginTop: "16px", display: "inline-block", width: "auto" }}
+            className="btn-subtle"
+            style={{ marginTop: "8px" }}
             onClick={() => setShow(!show)}
           >
             {show ? "Skrýt text" : "Číst dále..."}

@@ -510,6 +510,26 @@ sup {
   }
 }
 
+.btn-subtle {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  display: inline-block;
+  width: auto;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+
+  &:hover {
+    background: transparent;
+    color: var(--color-primary);
+    box-shadow: none;
+    transform: none;
+  }
+}
+
 /* Search input with icon */
 .search-container {
   position: relative;
