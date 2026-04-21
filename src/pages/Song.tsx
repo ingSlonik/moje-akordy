@@ -28,7 +28,7 @@ export default function SongPage({ file }: { file: string }) {
             {song && <AutoScroll speed={song.scrollSpeed} refScroll={refScroll} />}
             <main ref={refScroll}>
                 <div className="content">
-                    {isLoading && <p>Píseň se načítá...</p>}
+                    {isLoading && <p>Ladím kytaru a načítám píseň...</p>}
                     {error && <p className="error">{error.message}</p>}
                     {song && <Song {...song} />}
                 </div>

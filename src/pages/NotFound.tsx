@@ -4,7 +4,7 @@ import { useHead } from "../../services/common";
 export default function NotFoundPage() {
     useHead({
         title: "Píseň nenalezena | Fílův zpěvník",
-        description: "Osobní zpěvník Fíly! Obsahuje jak písně s akordy tak proložní básničkama. Je úplně bez reklam! A má auto scroll!"
+        description: "Osobní zpěvník Fíly! Obsahuje jak písně s akordy, tak proložení básničkami. Je úplně bez reklam a má i boží auto scroll!"
     });
 
     return (

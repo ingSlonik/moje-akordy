@@ -532,9 +532,13 @@ sup {
 
 /* Search input with icon */
 .search-container {
-  position: relative;
+  position: sticky;
+  top: calc(var(--nav-height) + 0px);
+  z-index: 20;
   margin-bottom: 24px;
   width: 100%;
+  padding: 8px 0;
+  margin-top: -8px;
 
   .search-icon {
     position: absolute;
@@ -701,7 +705,7 @@ sup {
 .btn-primary {
   background-color: var(--color-primary);
   color: white;
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;

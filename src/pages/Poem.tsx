@@ -23,7 +23,7 @@ export default function PoemPage({ file, title }: { file: string; title: string 
         <>
             <main>
                 <div className="content">
-                    {isLoading && <p>Báseň se načítá...</p>}
+                    {isLoading && <p>Otevírám knihu a načítám báseň...</p>}
                     {error && <p className="error">{error.message}</p>}
                     {poem && <>
                         <h1 className="title">{poem.title}</h1>

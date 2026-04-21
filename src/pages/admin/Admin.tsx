@@ -11,7 +11,7 @@ export default function Admin() {
 
     useHead({
         title: "Administrace Zpěvníku",
-        description: "Pokud nejste administrátor, prosím, opusťte tuto oblast!"
+        description: "Pokud nejsi oprávněný administrátor, raději hned utec!"
     })
 
 
@@ -57,7 +57,7 @@ export default function Admin() {
             handleLogin();
         }}>
             <h1>Administrace Zpěvníku</h1>
-            <p className="page-description">Pokud nejste administrátor, prosím, opusťte tuto oblast!</p>
+            <p className="page-description">Pokud nemáš tajné heslo, raději hned utec! Tohle je pouze pro vyvolené.</p>
 
             {message && <p className="info" style={{ color: "var(--color-primary)" }}>{message}</p>}
 

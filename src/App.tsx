@@ -42,7 +42,7 @@ export default function App() {
     </RouterProvider>;
 }
 
-// Fix iOS safari issus with viewport
+// Fix iOS safari issues with viewport
 if (global.window && global.document) { // only for browser
     const updateViewport = () => {
         const metaViewport = document.querySelector('meta[name="viewport"]');
