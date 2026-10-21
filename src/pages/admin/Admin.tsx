@@ -11,6 +11,9 @@ import { AnalyticsRecord } from "../../../types";
 
 import { useUser } from "easy-user-auth/react";
 import { UserProfile, AdminUserItem } from "../../../types";
+
+import { version } from "../../../package.json";
+
 type AdminProps = {
     path: string[];
 };
@@ -30,7 +33,7 @@ export default function Admin({ path }: AdminProps) {
         setMonth(nextM);
     };
 
-    const defaultTab = 
+    const defaultTab =
         "analytics"
         ;
 
@@ -98,7 +101,7 @@ export default function Admin({ path }: AdminProps) {
             if (activeTab === "users") {
                 fetchUsers();
             }
-            }
+        }
     }, [isLoggedIn, user, month, activeTab]);
 
     const fetchData = async (m: string) => {
@@ -111,7 +114,7 @@ export default function Admin({ path }: AdminProps) {
             } else if (err) {
                 setError((err as any)?.message || String(err));
             }
-            } catch (e) {
+        } catch (e) {
             setError(String(e));
             handleError(e as Error);
         }
@@ -146,13 +149,13 @@ export default function Admin({ path }: AdminProps) {
             </div>
         );
     }
-    
+
     return (
         <div className="admin-container">
             <div className="header">
                 <div className="admin-header-title">
                     <h2>Admin Dashboard</h2>
-                    <span className="admin-version-badge">v2.2.0</span>
+                    <span className="admin-version-badge">{version}</span>
                 </div>
                 <div className="admin-header-links">
                     <Link href="/editor" className="admin-nav-link">🎸 Správa písní</Link>
@@ -161,30 +164,30 @@ export default function Admin({ path }: AdminProps) {
             </div>
 
             <div className="admin-tabs">
-                {}
-                <Link 
-                    href="/admin/analytics" 
+                { }
+                <Link
+                    href="/admin/analytics"
                     className={`admin-tab ${activeTab === "analytics" ? "active" : ""}`}
                 >
                     Analytics
                 </Link>
-                {}
-                {}
-                <Link 
-                    href="/admin/errors" 
+                { }
+                { }
+                <Link
+                    href="/admin/errors"
                     className={`admin-tab ${activeTab === "errors" ? "active" : ""}`}
                 >
                     Error Logs
                 </Link>
-                {}
-                {}
-                <Link 
-                    href="/admin/users" 
+                { }
+                { }
+                <Link
+                    href="/admin/users"
                     className={`admin-tab ${activeTab === "users" ? "active" : ""}`}
                 >
                     User Management
                 </Link>
-                {}
+                { }
             </div>
 
             <div className="controls">
@@ -197,35 +200,35 @@ export default function Admin({ path }: AdminProps) {
                     </div>
                 ) : <div />}
 
-                {}
+                { }
                 <button className="btn-logout" onClick={() => loginUser(null)}>Log Out</button>
-                {}
+                { }
 
-                {}
+                { }
             </div>
 
             {loading && activeTab === "analytics" && <p className="admin-status-loading">Loading analytics...</p>}
             {error && activeTab === "analytics" && <p className="admin-status-error text-error">{error}</p>}
 
-            {}
+            { }
             {activeTab === "analytics" && (
                 <AnalyticsTab records={records} month={month} />
             )}
-            {}
+            { }
 
-            {}
+            { }
             {activeTab === "errors" && (
                 <ErrorsTab errors={errorsList} loading={loadingErrors} errorMsg={errorLogsError} />
             )}
-            {}
+            { }
 
-            {}
+            { }
             {activeTab === "users" && (
                 <UsersTab users={usersList} loading={loadingUsers} errorMsg={usersError} onRoleChange={handleRoleChange} />
             )}
-            {}
+            { }
 
-            {}
+            { }
 
             <div className="admin-footer">
                 <span>
