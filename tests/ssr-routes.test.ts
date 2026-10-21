@@ -19,4 +19,11 @@ describe("SSR Rendering", () => {
         assert.ok(html.includes("https://paulu.cz/"));
         assert.ok(html.includes("Filip"));
     });
+
+    it("renders Transposed Song Page to HTML without crashing and includes creator link in footer", async () => {
+        const html = await renderToHTML("http://localhost:1111", "/bill-cmelak?key=D", "<html><head></head><body><div id=\"root\"></div></body></html>", React.createElement(App));
+        assert.ok(html.includes("root"));
+        assert.ok(html.includes("https://paulu.cz/"));
+        assert.ok(html.includes("Filip"));
+    });
 });

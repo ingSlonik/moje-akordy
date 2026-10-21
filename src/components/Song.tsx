@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Link } from "easy-page-router/react";
+import { Link, useRouter } from "easy-page-router/react";
 import { useUser } from "easy-user-auth/react";
 import Ranking, { getEffectiveSongRating } from "./Ranking";
+import ShareModal from "./ShareModal";
 import { api } from "../services/api";
 import { SongDetail, SongToken, UserProfile } from "../../types";
 
@@ -24,15 +25,46 @@ export default function Song(props: SongProps) {
         showActions = true,
     } = props;
 
+    const { searchParams } = useRouter();
     const { isLoggedIn, userId, user, showUserDialog } = useUser<UserProfile>();
     const [localRating, setLocalRating] = useState<number | undefined>(undefined);
+    const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
 
     const effectiveRating = localRating !== undefined
         ? localRating
         : getEffectiveSongRating(props, userId, isLoggedIn);
 
     const basicChord = getBasicChord(text);
-    const [transposition, setTransposition] = useState(basicChord);
+
+    // Honor initial key from URL parameter (?key=... or ?chord=...) if present
+    const initialChord = (() => {
+        const paramKey = searchParams?.key || searchParams?.chord;
+        if (paramKey && chords.includes(paramKey)) {
+            return paramKey;
+        }
+        return basicChord;
+    })();
+
+    const [transposition, setTransposition] = useState(initialChord);
+
+    function handleTranspositionChange(newChord: string) {
+        setTransposition(newChord);
+        if (typeof window !== "undefined" && window.history) {
+            try {
+                const url = new URL(window.location.href);
+                if (newChord === basicChord) {
+                    url.searchParams.delete("key");
+                    url.searchParams.delete("chord");
+                } else {
+                    url.searchParams.set("key", newChord);
+                }
+                const newPath = url.pathname + (url.search ? url.search : "");
+                window.history.replaceState(null, "", newPath);
+            } catch {
+                // Ignore URL parsing errors
+            }
+        }
+    }
 
     const transpositionShift = chords.indexOf(transposition) - chords.indexOf(basicChord);
     const basicTransposedChord = getTransposedChord(basicChord, transpositionShift);
@@ -77,6 +109,34 @@ export default function Song(props: SongProps) {
                     />
                 </div>
 
+                {showActions && (
+                    <button
+                        type="button"
+                        onClick={() => setIsShareOpen(true)}
+                        className="btn-share-inline"
+                        title="Sdílet píseň a QR kód"
+                    >
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="icon-inline-svg"
+                        >
+                            <circle cx="18" cy="5" r="3" />
+                            <circle cx="6" cy="12" r="3" />
+                            <circle cx="18" cy="19" r="3" />
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                        </svg>
+                        Sdílet
+                    </button>
+                )}
+
                 {showActions && canEdit && (
                     <Link href={`/editor/${file}`} className="btn-edit-inline">
                         <svg
@@ -108,7 +168,7 @@ export default function Song(props: SongProps) {
                                 type="button"
                                 key={chord}
                                 className={`chord-btn ${isActive ? "active" : ""}`}
-                                onClick={() => setTransposition(chord)}
+                                onClick={() => handleTranspositionChange(chord)}
                             >
                                 {chord}
                             </button>
@@ -134,6 +194,18 @@ export default function Song(props: SongProps) {
                     }
                 })}
             </div>
+
+            {showActions && (
+                <ShareModal
+                    isOpen={isShareOpen}
+                    onClose={() => setIsShareOpen(false)}
+                    file={file}
+                    title={title}
+                    artist={artist}
+                    currentKey={transposition}
+                    defaultKey={basicChord}
+                />
+            )}
         </article>
     );
 }
