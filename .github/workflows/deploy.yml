@@ -1,0 +1,32 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 24
+
+      - name: Install Dependencies
+        run: npm install tsx node-ssh
+
+      - name: Run Deploy Script
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_PATH: ${{ secrets.SSH_PATH }}
+          PM2_APP_NAME: ${{ secrets.PM2_APP_NAME }}
+          SERVER_URL: ${{ secrets.SERVER_URL }}
+        run: npm run deploy
