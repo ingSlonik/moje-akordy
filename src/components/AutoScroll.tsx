@@ -1,33 +1,77 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const fontSize = 12;
-// const frameRate = 60;
 
-/**
- * @param speed Speed in ms for one text line.
- * @returns
- */
-export default function AutoScroll(
-  { speed = 1000, refScroll }: { speed: number; refScroll: React.RefObject<null | HTMLDivElement> },
-) {
-  const [scroll, setScroll] = useState(false);
+export type AutoScrollProps = {
+    speed?: number;
+    refScroll?: React.RefObject<null | HTMLElement>;
+    defaultEnabled?: boolean;
+};
 
-  useEffect(() => {
-    const element = refScroll.current;
-    if (scroll || !element) return;
+export default function AutoScroll({ speed = 2000, refScroll, defaultEnabled = true }: AutoScrollProps) {
+    const [scroll, setScroll] = useState(defaultEnabled);
 
-    // const shift = Math.ceil(frameRate * fontSize / speed);
-    const frameRate = speed / fontSize;
-    const shift = 1;
-    const int = setInterval(() => {
-      element.scrollTo(0, element.scrollTop + shift);
-    }, frameRate);
-    return () => clearInterval(int);
-  }, [scroll, speed]);
+    useEffect(() => {
+        if (!scroll || !speed || speed <= 0) return;
 
-  return (
-    <div className="auto-scroll">
-      <button onClick={() => setScroll(!scroll)}>Auto scroll ({scroll ? "off" : "on"})</button>
-    </div>
-  );
+        const frameRate = Math.max(10, speed / fontSize);
+        const shift = 1;
+
+        const interval = setInterval(() => {
+            const el = refScroll?.current;
+            const isScrollable =
+                Boolean(el &&
+                el.scrollHeight > el.clientHeight &&
+                typeof window !== "undefined" &&
+                window.getComputedStyle(el).overflowY !== "visible" &&
+                window.getComputedStyle(el).overflowY !== "hidden");
+
+            if (isScrollable && el) {
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
+                    setScroll(false);
+                    return;
+                }
+                el.scrollTop += shift;
+            } else if (typeof window !== "undefined") {
+                const scrollHeight = Math.max(
+                    document.documentElement.scrollHeight,
+                    document.body.scrollHeight
+                );
+                if (window.innerHeight + Math.ceil(window.scrollY) >= scrollHeight - 2) {
+                    setScroll(false);
+                    return;
+                }
+                window.scrollBy({ top: shift, behavior: "auto" });
+            }
+        }, frameRate);
+
+        return () => clearInterval(interval);
+    }, [scroll, speed, refScroll]);
+
+    return (
+        <div className="auto-scroll-widget">
+            <button
+                type="button"
+                className={`btn-auto-scroll ${scroll ? "scrolling" : ""}`}
+                onClick={() => setScroll(!scroll)}
+                title="Plynulé automatické posouvání textu písně"
+            >
+                <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="auto-scroll-icon"
+                >
+                    <path d="M12 5v14" />
+                    <path d="m19 12-7 7-7-7" />
+                </svg>
+                <span>Auto scroll: {scroll ? "ZAP" : "VYP"}</span>
+            </button>
+        </div>
+    );
 }

@@ -1,37 +1,52 @@
-import { Link } from "easy-page-router/react.js";
+import React, { useMemo } from "react";
+import { Link } from "easy-page-router/react";
+import { useSSRApi } from "../services/api";
 
-import { useSSRHook } from "ssr-hook";
-import { Song } from "../../types.js";
+export type NextSongProps = {
+    type: "song" | "poem";
+};
 
-export default function NextSong({ type }: { type: "song" | "poem" }) {
-  const [songs, error, isLoading, reload] = useSSRHook<Song[]>(`/api/songs`);
+export default function NextSong({ type }: NextSongProps) {
+    const [songs] = useSSRApi.getSongs({});
 
-  if (!songs) {
-    return null;
-  }
+    const randomSong = useMemo(() => {
+        if (!songs || songs.length === 0) return null;
+        const filtered = songs.filter((s) => s.type === type);
+        if (filtered.length === 0) return null;
+        const randomIndex = Math.floor(Math.random() * filtered.length);
+        return filtered[randomIndex];
+    }, [songs, type]);
 
-  // Filter songs based on type
-  const filteredSongs = songs.filter((song) => song.type === type);
+    if (!randomSong) return null;
 
-  // Check if there are any songs
-  if (filteredSongs.length === 0) {
-    return null;
-  }
+    const href = randomSong.type === "song"
+        ? `/${randomSong.file}`
+        : `/${randomSong.file}/${encodeURIComponent(randomSong.title)}`;
 
-  // Get a random index within the filtered array
-  const randomIndex = Math.floor(Math.random() * filteredSongs.length);
-
-  // Get the random song
-  const song = filteredSongs[randomIndex];
-
-  return (
-    <Link
-      className="next-song"
-      to={song.type === "song" ? `/${song.file}` : `/${song.file}/${encodeURIComponent(song.title)}`}
-    >
-      <svg xmlns="http://www.w3.org/000000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: "8px", verticalAlign: "-2px" }}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-      {song.title}
-      {song.bookTitle && ` (${song.bookTitle})`}
-    </Link>
-  );
+    return (
+        <div className="next-song-container">
+            <Link href={href} className="next-song">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="next-song-icon"
+                >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                </svg>
+                <span>
+                    {type === "song" ? "Další náhodná píseň: " : "Náhodná báseň pro radost: "}
+                    <strong>{randomSong.title}</strong>
+                    {randomSong.bookTitle ? ` (${randomSong.bookTitle})` : ` - ${randomSong.artist}`}
+                </span>
+            </Link>
+        </div>
+    );
 }

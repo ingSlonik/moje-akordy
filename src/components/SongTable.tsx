@@ -1,119 +1,239 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "easy-page-router/react";
+import { useUser } from "easy-user-auth/react";
+import Ranking, { getEffectiveSongRating } from "./Ranking";
+import { api } from "../services/api";
+import { Song, UserProfile } from "../../types";
 
-import Ranking from "./Ranking";
+export type SongTableProps = {
+    songs: Song[];
+};
 
-import { Song } from "../../types";
+export default function SongTable({ songs }: SongTableProps) {
+    const { isLoggedIn, userId, user, showUserDialog } = useUser<UserProfile>();
 
-export default function SongTable(props: { songs: Song[] }) {
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState<Array<"song" | "poem">>(["song"]);
+    const [search, setSearch] = useState("");
+    const [types, setTypes] = useState<Array<"song" | "poem">>(["song"]);
+    const [onlyMine, setOnlyMine] = useState(false);
+    const [localRatings, setLocalRatings] = useState<Record<string, number>>({});
 
-  const songs = useMemo(() => {
-    let songs = props.songs
-      .filter((song) => type.includes(song.type))
-      .map((s) => ({
-        ...s,
-        search: removeDiacritic(`${s.title} ${s.artist} ${s.bookTitle}`.toLocaleLowerCase()),
-      }));
-
-    if (search) {
-      const searchWords = removeDiacritic(search.toLocaleLowerCase()).split(" ");
-      for (const word of searchWords) {
-        songs = songs.filter((song) => song.search.includes(word));
-      }
+    function handleToggleType(type: "song" | "poem") {
+        if (types.includes(type)) {
+            // Keep at least one type active or allow both
+            if (types.length > 1) {
+                setTypes(types.filter((t) => t !== type));
+            } else {
+                setTypes(type === "song" ? ["poem"] : ["song"]);
+            }
+        } else {
+            setTypes([...types, type]);
+        }
     }
 
-    return songs
-      .sort((a, b) => b.rating - a.rating);
-  }, [props.songs, search, type]);
+    async function handleRateSong(file: string, newRating: number) {
+        if (!isLoggedIn) {
+            showUserDialog();
+            return;
+        }
 
-  function handleType(typ: "song" | "poem") {
-    if (type.includes(typ)) {
-      setType(type.filter((t) => t !== typ));
-    } else {
-      setType([...type, typ]);
+        setLocalRatings((prev) => ({ ...prev, [file]: newRating }));
+        const [res, err] = await api.updateSongRating({ file, rating: newRating });
+        if (err) {
+            console.error("Failed to update song rating:", err);
+        } else if (res) {
+            setLocalRatings((prev) => ({ ...prev, [file]: res.rating }));
+        }
     }
-  }
 
-  return (
-    <>
-      <div className="filter-row">
-        <label className="chip-wrapper" style={{ margin: 0 }}>
-          <input 
-            type="checkbox" 
-            className="chip-input"
-            checked={type.includes("song")} 
-            onChange={() => handleType("song")} 
-          />
-          <span className="chip-label">Písně</span>
-        </label>
-        
-        <label className="chip-wrapper" style={{ margin: 0 }}>
-          <input 
-            type="checkbox" 
-            className="chip-input"
-            checked={type.includes("poem")} 
-            onChange={() => handleType("poem")} 
-          />
-          <span className="chip-label">Básně</span>
-        </label>
-      </div>
+    const filteredSongs = useMemo(() => {
+        let list = (songs || []).filter((s) => types.includes(s.type));
 
-      <div className="search-container">
-        <svg className="search-icon" xmlns="http://www.w3.org/000000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input
-          type="text"
-          placeholder="Hledat dle názvu a autora..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+        if (isLoggedIn && onlyMine && userId) {
+            list = list.filter((s) => s.authorId === userId);
+        }
 
-      <table>
-        <thead>
-          <tr>
-            <th>Název</th>
-            <th>Umělec</th>
-            <th>Umím</th>
-            <th>Typ</th>
-          </tr>
-        </thead>
-        <tbody>
-          {songs.length < 1 && (
-            <tr>
-              <td colSpan={4} style={{ textAlign: "center", padding: "32px", color: "var(--color-text-muted)" }}>
-                To, co hledáš, tu (zatím) není... Zkus hledat líp!
-              </td>
-            </tr>
-          )}
-          {songs.map((song, i) => (
-            <tr key={i}>
-              <td>
-                <Link to={song.type === "song" ? `/${song.file}` : `/${song.file}/${encodeURIComponent(song.title)}`}>
-                  {song.title}
-                  {song.bookTitle && <span className="book-title">{song.bookTitle}</span>}
-                </Link>
-              </td>
-              <td style={{ color: "var(--color-text-muted)" }}>{song.artist}</td>
-              <td>
-                <Ranking ranking={song.rating} />
-              </td>
-              <td>
-                <span className={`type-badge type-${song.type}`}>
-                  {song.type === "song" ? "Píseň" : "Báseň"}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
-  );
+        if (search.trim()) {
+            const searchWords = removeDiacritics(search).split(/\s+/).filter(Boolean);
+            list = list.filter((s) => {
+                const combined = removeDiacritics(
+                    `${s.title} ${s.artist} ${s.bookTitle || ""} ${s.authorName || ""}`
+                );
+                return searchWords.every((word) => combined.includes(word));
+            });
+        }
+
+        return [...list].sort((a, b) => {
+            const ratingA = localRatings[a.file] !== undefined
+                ? localRatings[a.file]
+                : getEffectiveSongRating(a, userId, isLoggedIn);
+            const ratingB = localRatings[b.file] !== undefined
+                ? localRatings[b.file]
+                : getEffectiveSongRating(b, userId, isLoggedIn);
+
+            if (ratingB !== ratingA) {
+                return ratingB - ratingA;
+            }
+            return a.title.localeCompare(b.title, "cs");
+        });
+    }, [songs, types, onlyMine, isLoggedIn, userId, search, localRatings]);
+
+    return (
+        <div className="song-table-wrapper">
+            <div className="filter-row">
+                <div className="chips-group">
+                    <label className={`chip-badge ${types.includes("song") ? "active" : ""}`}>
+                        <input
+                            type="checkbox"
+                            checked={types.includes("song")}
+                            onChange={() => handleToggleType("song")}
+                        />
+                        <span>Písně</span>
+                    </label>
+
+                    <label className={`chip-badge ${types.includes("poem") ? "active" : ""}`}>
+                        <input
+                            type="checkbox"
+                            checked={types.includes("poem")}
+                            onChange={() => handleToggleType("poem")}
+                        />
+                        <span>Básně</span>
+                    </label>
+
+                    {isLoggedIn && (
+                        <label className={`chip-badge mine-chip ${onlyMine ? "active" : ""}`}>
+                            <input
+                                type="checkbox"
+                                checked={onlyMine}
+                                onChange={(e) => setOnlyMine(e.target.checked)}
+                            />
+                            <span>Moje písně</span>
+                        </label>
+                    )}
+                </div>
+
+                <div className="table-actions">
+                    <Link href="/editor" className="btn-add-song">
+                        <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="icon-inline-svg"
+                        >
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Přidat píseň
+                    </Link>
+                </div>
+            </div>
+
+            <div className="search-container">
+                <svg
+                    className="search-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                </svg>
+                <input
+                    type="text"
+                    placeholder="Hledat podle názvu, umělce či autora..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+            </div>
+
+            <div className="song-table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Název</th>
+                            <th>Umělec</th>
+                            <th>Přidal</th>
+                            <th>Umím</th>
+                            <th>Typ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredSongs.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="empty-message">
+                                    To, co hledáš, tu (zatím) není... Zkus hledat líp!
+                                </td>
+                            </tr>
+                        ) : (
+                            filteredSongs.map((song, i) => {
+                                const effectiveRating = localRatings[song.file] !== undefined
+                                    ? localRatings[song.file]
+                                    : getEffectiveSongRating(song, userId, isLoggedIn);
+
+                                const href = song.type === "song"
+                                    ? `/${song.file}`
+                                    : `/${song.file}/${encodeURIComponent(song.title)}`;
+
+                                const canEdit = isLoggedIn && song.type === "song" && (
+                                    song.authorId === userId || user?.role === "admin"
+                                );
+
+                                return (
+                                    <tr key={`${song.type}-${song.file}-${i}`}>
+                                        <td className="song-title-cell">
+                                            <Link href={href} className="song-link">
+                                                <span className="title-text">{song.title}</span>
+                                                {song.bookTitle && (
+                                                    <span className="book-subtitle">({song.bookTitle})</span>
+                                                )}
+                                            </Link>
+                                        </td>
+                                        <td className="artist-cell">{song.artist}</td>
+                                        <td className="author-cell">{song.authorName || "Fíla"}</td>
+                                        <td className="rating-cell">
+                                            {song.type === "song" ? (
+                                                <Ranking
+                                                    ranking={effectiveRating}
+                                                    interactive
+                                                    onChange={(r) => handleRateSong(song.file, r)}
+                                                />
+                                            ) : (
+                                                <span className="poem-dash">—</span>
+                                            )}
+                                        </td>
+                                        <td className="type-cell">
+                                            <span className={`type-badge type-${song.type}`}>
+                                                {song.type === "song" ? "Píseň" : "Báseň"}
+                                            </span>
+                                            {canEdit && (
+                                                <Link href={`/editor/${song.file}`} className="table-edit-btn" title="Upravit píseň">
+                                                    Upravit
+                                                </Link>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
 }
 
-function removeDiacritic(str: string) {
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+function removeDiacritics(str: string): string {
+    return str
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
 }

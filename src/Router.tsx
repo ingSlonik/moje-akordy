@@ -1,31 +1,54 @@
-import { Suspense, useEffect, useState } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import { RenderAnimationProps, Router } from "easy-page-router/react";
 
-import HomePage from "./pages/Home";
+import Index from "./pages/Index";
 import SongPage from "./pages/Song";
 import PoemPage from "./pages/Poem";
-import NotFoundPage from "./pages/NotFound";
-import Admin from "./pages/admin/Admin";
+import Editor from "./pages/Editor";
+import ResetPassword from "./pages/ResetPassword";
+import NotFound from "./pages/NotFound";
 
-export default function PageRouter() {
+const Admin = lazy(() => import("./pages/admin/Admin"));
+
+export default function AppRouter() {
     return (
         <div className="page-router">
             <Router
                 renderAnimation={Animation}
-                renderPage={({ path }) => {
-                    if (path[0] === "404") {
-                        return <NotFoundPage />;
-                    } else if (path[0] === "admin") {
-                        return <Suspense fallback={<h1>Načítá se...</h1>}>
-                            <Admin />
-                        </Suspense>;
-                    } else if (path[0] && path[1]) {
-                        return <PoemPage file={path[0]} title={path[1]} />;
-                    } else if (path[0]) {
-                        return <SongPage file={path[0]} />;
-                    } else {
-                        return <HomePage />;
+                renderPage={({ path }: { path: string[] }) => {
+                    if (path.length === 0) {
+                        return <Index />;
                     }
+
+                    if (path[0] === "404") {
+                        return <NotFound />;
+                    }
+
+                    if (path[0] === "reset-password") {
+                        return <ResetPassword />;
+                    }
+
+                    if (path[0] === "admin") {
+                        return (
+                            <Suspense fallback={<div className="loading-fallback">Načítám administraci...</div>}>
+                                <Admin path={path} />
+                            </Suspense>
+                        );
+                    }
+
+                    if (path[0] === "editor") {
+                        return <Editor file={path[1]} />;
+                    }
+
+                    if (path[0] && path[1]) {
+                        return <PoemPage file={path[0]} title={path[1]} />;
+                    }
+
+                    if (path[0]) {
+                        return <SongPage file={path[0]} />;
+                    }
+
+                    return <NotFound />;
                 }}
             />
         </div>
