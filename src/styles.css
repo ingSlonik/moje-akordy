@@ -136,7 +136,7 @@ main {
   display: flex;
   flex-direction: column;
   opacity: 1;
-  transform: translateX(0%);
+  transform: none;
 }
 
 .page-animation.active.new {
@@ -166,11 +166,9 @@ main {
 @keyframes translateIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -1041,9 +1039,16 @@ tbody tr:hover {
 
 .auto-scroll-widget {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
+  right: max(24px, env(safe-area-inset-right, 24px));
+  bottom: max(24px, env(safe-area-inset-bottom, 24px));
   z-index: 40;
+}
+
+@media (max-width: 640px) {
+  .auto-scroll-widget {
+    right: max(16px, env(safe-area-inset-right, 16px));
+    bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  }
 }
 
 .btn-auto-scroll {
@@ -1059,6 +1064,8 @@ tbody tr:hover {
   font-weight: 700;
   box-shadow: var(--shadow-lg);
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
   transition: all var(--transition-fast);
 }
 
