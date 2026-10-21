@@ -10,7 +10,7 @@
     "build": "vite build && npm run build:server",
     "build:server": "esbuild server/index.tsx --bundle --platform=node --target=node24 --outfile=dist-server/index.js --packages=external",
     "test": "node --import tsx --env-file=.env --test --test-concurrency=1 tests/*.test.ts",
-    "deploy": "node scripts/deploy.ts"
+    "deploy": "tsx scripts/deploy.ts"
   },
   "dependencies": {
     "@types/qrcode": "^1.5.6",
