@@ -1,42 +1,114 @@
-import { readdir, readFile, stat, writeFile, rm } from "node:fs/promises";
-import express, { Request, Response } from "express";
-import { parse, resolve } from "node:path";
-import { existsSync } from "node:fs";
-import process from "node:process";
-import jwt from "jsonwebtoken";
+import { resolve } from "path";
+import { readFile } from "fs/promises";
+
 import cors from "cors";
-import sha1 from "sha1";
+import express from "express";
 
-import React from "react";
-
-import { renderToHTML } from "ssr-hook/server";
+import easyDBNode from "easy-db-node";
 import { APIError, setAPIBackend } from "typed-client-server-api";
 
-import { parsePoem, parseSong } from "../services/parser";
-import { location } from "../services/common";
-
+import { renderToHTML } from "ssr-hook/server";
+import { postEasyAnalytics, getEasyAnalytics } from "easy-analytics/server";
+import { EasyLoginServer } from "easy-user-auth/server";
+import { sendMailForgottenPassword } from "./mail";
+import {
+    API,
+    Database,
+    AnalyticsRecord,
+    UserProfile,
+    Song,
+    SongDetail,
+    SongRecord,
+    PoemDetail,
+    PoemRecord,
+} from "../types";
+import { tokenizeSongContent, slugifySongId } from "../src/utils/parser";
+import { expressImageResizer } from "easy-image-resizer";
 import App from "../src/App";
 
-import { API, Song } from "../types";
-
-global.React = React;
-
-const PORT = process.env.PORT || 1010;
+const PORT = process.env.SERVER_PORT || 1111;
 const LOCALHOST = `http://localhost:${PORT}`;
-const ORIGIN = process.env.NODE_ENV === "development" ? LOCALHOST : "https://akordy.paulu.cz";
 
-const JWT_SECRET = "VemKytaruAJeď:P";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined");
+// The ORIGIN is used for SEO and by ssr-hook to know where the requests are coming from.
+const ORIGIN = process.env.NODE_ENV === "development"
+    ? LOCALHOST
+    : process.env.SERVER_URL || LOCALHOST;
 
 const INDEX_HTML_PATH = resolve(process.cwd(), "dist", "index.html");
-const dirPoems = resolve(process.cwd(), "public", "poems");
-const dirSongs = resolve(process.cwd(), "public", "songs");
+
+// The directory where easy-db-node will store its data files.
+const FILE_URL = process.env.NODE_ENV === "development"
+    ? LOCALHOST + "/files"
+    : "/files";
+
+// Initialize the database with our schema. We can destructure common operations.
+const { insert, select, selectArray, update, remove } = easyDBNode<Database>({ fileUrl: FILE_URL });
 
 const app = express();
 
 if (process.env.NODE_ENV === "development") {
     console.log("Starting development server...");
-    app.use(cors());
+    app.use(cors({
+        origin: ["http://localhost:5173", "http://localhost:1111"],
+        credentials: true
+    }));
+} else {
+    app.use(cors({
+        origin: ORIGIN,
+        credentials: true
+    }));
 }
+
+// Parse incoming JSON payloads.
+app.use(express.json({ limit: "1MB" }));
+
+const authServer = new EasyLoginServer<UserProfile>({
+    jwtSecret: JWT_SECRET,
+    secureCookies: process.env.NODE_ENV === "production",
+    db: {
+        insertUser: async (user: any) => {
+            if (!user.name || !String(user.name).trim()) {
+                user.name = String(user.mail || "").split("@")[0] || "Hudebník";
+            }
+            if (!user.role) {
+                user.role = "user";
+            }
+            return insert("user", user);
+        },
+        getUserById: async (id: string) => select("user", id),
+        getUserByMail: async (mail: string) => {
+            const users = await selectArray("user");
+            return users.find((u: any) => u.mail.toLowerCase() === mail.toLowerCase()) || null;
+        },
+        getUserByRecoveryToken: async (token: string) => {
+            const users = await selectArray("user");
+            return users.find((u: any) => u.passwordRecovery?.token === token) || null;
+        },
+        updateUser: async (id: string, user: any) => {
+            await update("user", id, user);
+            const newName = user.name || (user as any).profile?.name;
+            if (newName) {
+                const songs = await selectArray("song");
+                for (const s of songs) {
+                    if (s.authorId === id && s.authorName !== newName) {
+                        await update("song", s._id, {
+                            ...s,
+                            authorName: newName,
+                        });
+                    }
+                }
+            }
+        },
+    },
+    mailSender: async (lang: string, mailTo: string, token: string) => {
+        await sendMailForgottenPassword(lang, mailTo, token, ORIGIN);
+    },
+});
+
+// Register all user authentication routes (/api/login, /api/register, /api/user, etc.)
+authServer.registerExpressRoutes(app);
 
 // ---------------------------- SSR for index ----------------------------------
 app.get(["/", "/index.html"], async (req, res) => {
@@ -47,129 +119,474 @@ app.get(["/", "/index.html"], async (req, res) => {
         res.send(html);
     } catch (e) {
         console.error("SSR error:", e);
-        res.status(500);
-        res.json({ message: "Internal server error" });
+        res.status(500).json({ message: "Internal server error" });
     }
 });
 
+// --------------- Static files, db files and image resizer --------------------
+// Serve and dynamically resize images from public directory with auto-caching
+app.use(expressImageResizer({
+    sourceDir: "./public",
+    cacheDir: "./cache/images",
+}));
+// Serve static files generated by the bundler (JS, CSS as public assets)
 app.use(express.static("dist"));
-app.use(express.static("public"));
 
-// --------------------------------- SEO ---------------------------------------
-app.get("/robots.txt", (_, res) => {
-    res.type("text/plain");
-    res.send(`User-agent: *
-Disallow: /admin/
-Allow: /
+// Serve the database files (e.g. uploaded images or PDF files from easy-db-node)
+app.use("/files", express.static("easy-db-files"));
 
-Sitemap: ${ORIGIN}/sitemap.xml`);
+// --------------------------- Easy analytics ----------------------------------
+app.post("/api/easy-analytics", async (req, res) => {
+    const userAgent = (req.headers['user-agent'] as string) || "";
+    const rawIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || "";
+
+    let userId: string | undefined;
+    let userEmail: string | undefined;
+    let userName: string | undefined;
+    let userRole: string | undefined;
+
+    try {
+        const auth = await authServer.checkLogin(req, res);
+        if (auth && auth.userId) {
+            userId = auth.userId;
+            userEmail = auth.mail;
+            userName = auth.name;
+            const dbUser = await select("user", auth.userId);
+            if (dbUser) {
+                userEmail = dbUser.mail || userEmail;
+                userName = dbUser.name || userName;
+                userRole = dbUser.role;
+            }
+        }
+    } catch {
+        // Visitor is not logged in - normal unauthenticated visit
+    }
+    try {
+        const response = await postEasyAnalytics(req.body, userAgent, rawIp as string);
+
+        // If user is authenticated, attach user identity to newly created analytics record
+        if (response && typeof response.id === "string" && userId) {
+            const date = (req.body && req.body.localDate) || new Date().toISOString();
+            const month = date.slice(0, 7);
+            const collection = `easyAnalytics-${month}`;
+            try {
+                const record = await select(collection as any, response.id);
+                if (record) {
+                    await update(collection as any, response.id, {
+                        ...record,
+                        userId,
+                        userEmail,
+                        userName,
+                        userRole,
+                    });
+                }
+            } catch (updateErr) {
+                console.error("Failed to attach user identity to analytics record:", updateErr);
+            }
+        }
+        res.status(200).json(response);
+    } catch (e: any) {
+        console.error("Analytics error:", e);
+        res.status(400).json({ message: e.message || "Bad request" });
+    }
 });
 
-app.get("/sitemap.xml", async (req, res) => {
-    const songs = await getSongs();
+// ----------------------------- Helpers ---------------------------------------
+async function getOptionalUser(req?: express.Request, res?: express.Response): Promise<{ userId: string; name: string; mail: string } | null> {
+    if (!req) return null;
+    try {
+        const session = await authServer.checkLogin(req, res);
+        if (session && session.userId) {
+            return {
+                userId: session.userId,
+                name: session.name || session.mail?.split("@")[0] || "Uživatel",
+                mail: session.mail || "",
+            };
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
 
-    const lastModified = songs.reduce((last, song) => song.lastModified > last ? song.lastModified : last, "");
+function resolveSongRating(song: SongRecord, userId?: string | null): number {
+    if (userId) {
+        if (song.ratings && typeof song.ratings[userId] === "number") {
+            return song.ratings[userId];
+        }
+        if (song.authorId === userId) {
+            return song.defaultRating ?? 0;
+        }
+        return 0;
+    }
+    return song.defaultRating ?? 0;
+}
+
+// --------------------------------- API ---------------------------------------
+setAPIBackend<API>(app, {
+    async getSongs(_params, req, res) {
+        const user = await getOptionalUser(req, res);
+        const userId = user?.userId;
+
+        const songs = await selectArray("song");
+        const poems = await selectArray("poem");
+
+        const resultSongs: Song[] = songs.map((s) => ({
+            file: s._id,
+            type: "song",
+            artist: s.artist,
+            title: s.title,
+            rating: resolveSongRating(s, userId),
+            defaultRating: s.defaultRating ?? 0,
+            ratings: s.ratings ?? {},
+            authorId: s.authorId || "fila",
+            authorName: s.authorName || "Fíla",
+            lastModified: s.updatedAt || s.createdAt || new Date().toISOString(),
+        }));
+
+        const resultPoems: Song[] = poems.map((p) => ({
+            file: p.bookSlug,
+            type: "poem",
+            artist: p.artist,
+            title: p.title,
+            rating: 0,
+            defaultRating: 0,
+            ratings: {},
+            authorId: p.authorId || "fila",
+            authorName: p.authorName || "Fíla",
+            lastModified: p.updatedAt || p.createdAt || new Date().toISOString(),
+            bookTitle: p.bookTitle,
+        }));
+
+        return [...resultSongs, ...resultPoems];
+    },
+
+    async getSong({ file }, req, res) {
+        const song = await select("song", file);
+        if (!song) {
+            throw new APIError("Píseň nebyla nalezena", 404);
+        }
+        const user = await getOptionalUser(req, res);
+        const userId = user?.userId;
+        const tokens = tokenizeSongContent(song.content);
+
+        return {
+            file,
+            title: song.title,
+            artist: song.artist,
+            scrollSpeed: song.scrollSpeed ?? 2000,
+            rating: resolveSongRating(song, userId),
+            defaultRating: song.defaultRating ?? 0,
+            ratings: song.ratings ?? {},
+            authorId: song.authorId || "fila",
+            authorName: song.authorName || "Fíla",
+            content: song.content,
+            text: tokens,
+        };
+    },
+
+    async getPoem({ file, title }) {
+        const poems = await selectArray("poem");
+        const poem = poems.find(
+            (p) => (p.bookSlug === file && p.title === title) || p._id === file || (p.bookSlug === file && p._id === title)
+        );
+        if (!poem) {
+            throw new APIError("Báseň nebyla nalezena", 404);
+        }
+        return {
+            file: poem.bookSlug,
+            title: poem.title,
+            artist: poem.artist || null,
+            bookTitle: poem.bookTitle || null,
+            authorId: poem.authorId || "fila",
+            authorName: poem.authorName || "Fíla",
+            text: poem.text,
+        };
+    },
+
+    async addSong({ file, title, artist, scrollSpeed, content, rating }, req, res) {
+        const session = await authServer.checkLogin(req!, res!);
+        const dbUser = await select("user", session.userId);
+        const authorName = dbUser?.name || session.name || session.mail?.split("@")[0] || "Hudebník";
+
+        if (!title || !title.trim() || !artist || !artist.trim()) {
+            throw new APIError("Název i interpret písně jsou povinné", 400);
+        }
+
+        let slug = "";
+        if (file && file.trim()) {
+            slug = file
+                .trim()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/[^a-z0-9_-]+/g, "-")
+                .replace(/^-+|-+$/g, "");
+        } else {
+            slug = slugifySongId(artist, title);
+        }
+        if (!slug) {
+            slug = "pisen-" + Date.now();
+        }
+
+        const existing = await select("song", slug);
+        if (existing) {
+            if (file && file.trim()) {
+                throw new APIError("Píseň s tímto identifikátorem již existuje", 400);
+            }
+            let counter = 2;
+            let candidate = `${slug}-${counter}`;
+            while (await select("song", candidate)) {
+                counter++;
+                candidate = `${slug}-${counter}`;
+            }
+            slug = candidate;
+        }
+
+        const speed = (typeof scrollSpeed === "number" && scrollSpeed > 0) ? scrollSpeed : 2000;
+        const initRating = typeof rating === "number" ? Math.max(0, Math.min(100, Math.round(rating))) : 0;
+        const now = new Date().toISOString();
+
+        await update("song", slug, {
+            title: title.trim(),
+            artist: artist.trim(),
+            scrollSpeed: speed,
+            defaultRating: initRating,
+            ratings: { [session.userId]: initRating },
+            content: content.trim() + "\n",
+            authorId: session.userId,
+            authorName,
+            createdAt: now,
+            updatedAt: now,
+        } as any);
+
+        return { file: slug };
+    },
+
+    async updateSong({ file, title, artist, scrollSpeed, content, rating }, req, res) {
+        const session = await authServer.checkLogin(req!, res!);
+        const existing = await select("song", file);
+        if (!existing) {
+            throw new APIError("Píseň nebyla nalezena", 404);
+        }
+        const dbUser = await select("user", session.userId);
+        const isAdmin = dbUser?.role === "admin";
+        if (existing.authorId !== session.userId && !isAdmin) {
+            throw new APIError("Nemáte oprávnění upravovat tuto píseň", 403);
+        }
+
+        const speed = (typeof scrollSpeed === "number" && scrollSpeed > 0) ? scrollSpeed : (existing.scrollSpeed || 2000);
+        const updated: any = {
+            ...existing,
+            title: title ? title.trim() : existing.title,
+            artist: artist ? artist.trim() : existing.artist,
+            scrollSpeed: speed,
+            content: content !== undefined ? content.trim() + "\n" : existing.content,
+            updatedAt: new Date().toISOString(),
+        };
+
+        if (typeof rating === "number") {
+            const clampedRating = Math.max(0, Math.min(100, Math.round(rating)));
+            updated.ratings = { ...(existing.ratings || {}), [session.userId]: clampedRating };
+            if (existing.authorId === session.userId) {
+                updated.defaultRating = clampedRating;
+            }
+        }
+
+        await update("song", file, updated);
+        return true;
+    },
+
+    async removeSong({ file }, req, res) {
+        const session = await authServer.checkLogin(req!, res!);
+        const existing = await select("song", file);
+        if (!existing) {
+            throw new APIError("Píseň nebyla nalezena", 404);
+        }
+        const dbUser = await select("user", session.userId);
+        const isAdmin = dbUser?.role === "admin";
+        if (existing.authorId !== session.userId && !isAdmin) {
+            throw new APIError("Nemáte oprávnění smazat tuto píseň", 403);
+        }
+
+        await remove("song", file);
+        return true;
+    },
+
+    async updateSongRating({ file, rating }, req, res) {
+        const session = await authServer.checkLogin(req!, res!);
+        const existing = await select("song", file);
+        if (!existing) {
+            throw new APIError("Píseň nebyla nalezena", 404);
+        }
+        const clampedRating = Math.max(0, Math.min(100, Math.round(rating)));
+        const updated: any = {
+            ...existing,
+            ratings: { ...(existing.ratings || {}), [session.userId]: clampedRating },
+        };
+        if (existing.authorId === session.userId) {
+            updated.defaultRating = clampedRating;
+        }
+        await update("song", file, updated);
+        return { rating: clampedRating };
+    },
+
+    async getEasyAnalyticsData({ month }: { month: string }, req?: any, res?: any) {
+        const session = await authServer.checkLogin(req!, res!);
+        const user = await select("user", session.userId);
+        if (!user || user.role !== "admin") {
+            throw new Error("Forbidden");
+        }
+        const rawRecords: AnalyticsRecord[] = (await getEasyAnalytics(month)) as any;
+        const allUsers = await selectArray("user");
+        const userMap = new Map<string, any>();
+        for (const u of allUsers) {
+            if (u._id) {
+                userMap.set(String(u._id), u);
+                userMap.set(String(u._id).toLowerCase(), u);
+            }
+        }
+
+        // Track localId to user mappings from any authenticated visits
+        const localIdToUser = new Map<string, { userId: string; userEmail: string; userName?: string; userRole?: string }>();
+        for (const r of rawRecords) {
+            if (r && r.userId && r.localId) {
+                const u = userMap.get(String(r.userId)) || userMap.get(String(r.userId).toLowerCase());
+                const email = u?.mail || (r as any).userEmail;
+                const name = u?.name || (r as any).userName;
+                const role = u?.role || (r as any).userRole;
+                if (!localIdToUser.has(r.localId) && email) {
+                    localIdToUser.set(r.localId, {
+                        userId: String(r.userId),
+                        userEmail: email,
+                        userName: name,
+                        userRole: role,
+                    });
+                }
+            }
+        }
+
+        return rawRecords.map((r: any) => {
+            let userId = r.userId;
+            let userEmail = r.userEmail;
+            let userName = r.userName;
+            let userRole = r.userRole;
+            const detectedUser = r.localId ? localIdToUser.get(r.localId) : undefined;
+
+            if (userId) {
+                const u = userMap.get(String(userId)) || userMap.get(String(userId).toLowerCase());
+                if (u) {
+                    userEmail = u.mail || userEmail;
+                    userName = u.name || userName;
+                    userRole = u.role || userRole;
+                }
+            }
+
+            return {
+                ...r,
+                userId: userId || undefined,
+                userEmail: userEmail || undefined,
+                userName: userName || undefined,
+                userRole: userRole || undefined,
+                detectedUserId: !userId && detectedUser ? detectedUser.userId : undefined,
+                detectedUserEmail: !userId && detectedUser ? detectedUser.userEmail : undefined,
+                detectedUserName: !userId && detectedUser ? detectedUser.userName : undefined,
+                detectedUserRole: !userId && detectedUser ? detectedUser.userRole : undefined,
+            };
+        });
+    },
+
+    async getEasyAnalyticsErrors({ month }: { month: string }, req?: any, res?: any) {
+        const session = await authServer.checkLogin(req!, res!);
+        const user = await select("user", session.userId);
+        if (!user || user.role !== "admin") {
+            throw new Error("Forbidden");
+        }
+        return await selectArray(`easyAnalyticsError-${month}` as any);
+    },
+
+    async getUsers(_params: {}, req: any, res: any) {
+        const session = await authServer.checkLogin(req!, res!);
+        const user = await select("user", session.userId);
+        if (!user || user.role !== "admin") {
+            throw new Error("Forbidden");
+        }
+        const allUsers = await selectArray("user");
+        return allUsers.map((u: any) => ({
+            _id: u._id,
+            email: u.mail,
+            name: u.name || u.profile?.name || "",
+            role: u.profile?.role || u.role || "user",
+            createdAt: u.createdAt || u.created || undefined,
+        }));
+    },
+
+    async updateUserRole({ userId, role }: { userId: string; role: "admin" | "user" }, req: any, res: any) {
+        const session = await authServer.checkLogin(req!, res!);
+        const user = await select("user", session.userId);
+        if (!user || user.role !== "admin") {
+            throw new Error("Forbidden");
+        }
+        const targetUser = await select("user", userId);
+        if (!targetUser) {
+            throw new Error("User not found");
+        }
+        targetUser.role = role;
+        (targetUser as any).profile = (targetUser as any).profile || { name: (targetUser as any).name || "", role: "user" };
+        (targetUser as any).profile.role = role;
+        await update("user", userId, targetUser);
+        return true;
+    },
+});
+
+// --------------------------------- SEO ---------------------------------------
+app.get("/robots.txt", (_: express.Request, res: express.Response) => {
+    res.type("text/plain");
+    res.send(`User-agent: *\nDisallow: /admin/\nAllow: /\n\nSitemap: ${ORIGIN}/sitemap.xml`);
+});
+
+app.get("/sitemap.xml", async (_: express.Request, res: express.Response) => {
+    const songs = await selectArray("song");
+    const poems = await selectArray("poem");
+
     const sitemap = [
         {
-            url: `${location}/`,
-            lastModified,
+            url: `${ORIGIN}/`,
+            lastModified: new Date().toISOString().slice(0, 10),
             changeFrequency: "weekly",
             priority: 1,
         },
         ...songs.map((song) => ({
-            url: song.type === "song"
-                ? `${location}/${song.file}`
-                : `${location}/${song.file}/${encodeURIComponent(song.title)}`,
-            lastModified: song.lastModified,
+            url: `${ORIGIN}/${song._id}`,
+            lastModified: (song.updatedAt || song.createdAt || new Date().toISOString()).slice(0, 10),
             changeFrequency: "monthly",
-            priority: song.type === "song" ? 0.7 : 0.4,
+            priority: 0.7,
+        })),
+        ...poems.map((poem) => ({
+            url: `${ORIGIN}/${poem.bookSlug}/${encodeURIComponent(poem.title)}`,
+            lastModified: (poem.updatedAt || poem.createdAt || new Date().toISOString()).slice(0, 10),
+            changeFrequency: "monthly",
+            priority: 0.4,
         })),
     ];
+
     res.set("Content-Type", "text/xml");
-    res.send(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${sitemap.map((s) => `<url>
-<loc>${s.url}</loc>
-<lastmod>${s.lastModified}</lastmod>
-<changefreq>${s.changeFrequency}</changefreq>
-<priority>${s.priority}</priority>
-</url>` ).join("\n")}
-</urlset>`);
+    res.send(`<?xml version="1.0" encoding="UTF-8" ?>
+<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${sitemap.map(s => `<url>
+        <loc>${s.url}</loc>
+        <lastmod>${s.lastModified}</lastmod>
+        ${s.changeFrequency ? `<changefreq>${s.changeFrequency}</changefreq>` : ""}
+        <priority>${s.priority}</priority>
+    </url>`).join("\n")}</urlset>`);
 });
 
-// --------------------------------- API ---------------------------------------
-app.use(express.json({ limit: "0.5MB" }));
-
-setAPIBackend<API>(app, {
-    async getSongs() {
-        return getSongs();
-    },
-    async getSong({ file }) {
-        const path = resolve(dirSongs, file + ".md");
-        const text = await readFile(path, "utf-8");
-        const song = parseSong(text);
-        return song;
-    },
-    async getSongRaw({ file }) {
-        const path = resolve(dirSongs, file + ".md");
-        const text = await readFile(path, "utf-8");
-        return text;
-    },
-    async getPoem({ file, title }) {
-        const path = resolve(dirPoems, file + ".md");
-        const text = await readFile(path, "utf-8");
-        const poem = parsePoem(text, title);
-        if (!poem)
-            throw new APIError("Poem not found", 404);
-
-        return poem;
-    },
-
-    // ----------------------------- Admin -------------------------------------
-    async addLogin({ username, password }) {
-        if (username === "admin" && sha1(password) === "97295c7c77f4ed135a926fbac3d244e40632fef6") {
-            const name = "Já nebo Zůza";
-            const token = jwt.sign({
-                sub: "admin",
-                name,
-                iat: Math.floor(Date.now() / 1000),
-                exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30, // one month
-            }, JWT_SECRET);
-
-            return { name, token };
-        }
-        throw new Error("Invalid credentials");
-    },
-    async addSong({ file }, req, res) {
-        checkLogin(req, res);
-
-        const path = resolve(dirSongs, file + ".md");
-        if (existsSync(path))
-            throw new Error("File already exists!");
-
-        await writeFile(path, `# ${file}\n@ Zpěvák\n$ 1000 $\n% 0\n\n`, "utf-8");
-    },
-    async updateSong({ file, text }, req, res) {
-        checkLogin(req, res);
-
-        const path = resolve(dirSongs, file + ".md");
-        if (!existsSync(path))
-            throw new Error("File doesn't exist!");
-
-        await writeFile(path, text, "utf-8");
-    },
-    async removeSong({ file }, req, res) {
-        checkLogin(req, res);
-
-        const path = resolve(dirSongs, file + ".md");
-        if (!existsSync(path))
-            throw new Error("File doesn't exist!");
-
-        await rm(path);
-    },
+// Fallback for unmatched API routes - prevent SSR HTML fallback for API endpoints
+app.all(["/api", "/api/{*endpoint}"], (req, res) => {
+    res.status(404).json({ error: `API endpoint ${req.method} ${req.url} not found` });
 });
 
 // --------------------------------- SSR ---------------------------------------
-app.get("*", async (req, res) => {
+app.get(/.*/, async (req: express.Request, res: express.Response) => {
     try {
         const indexHtml = await readFile(INDEX_HTML_PATH, "utf-8");
         const html = await renderToHTML(ORIGIN, req.url, indexHtml, <App />);
@@ -177,112 +594,11 @@ app.get("*", async (req, res) => {
         res.send(html);
     } catch (e) {
         console.error("SSR error:", e);
-        res.status(500);
-        res.json({ message: "Internal server error" });
+        res.status(500).json({ message: "Internal server error" });
     }
 });
 
-// ----------------------------- Run server ------------------------------------
-app.listen(PORT, () => console.log(`Moje akordy app listening on ${LOCALHOST}`));
-
-// ----------------------------- Helpers ------------------------------------
-function checkLogin(req: Request, res: Response): string {
-    try {
-        const authorization = req.headers.authorization;
-        if (!authorization)
-            throw new Error("Unauthorized");
-
-        const token = authorization.split(" ")[1];
-        const payload = jwt.verify(token, JWT_SECRET); // Expiration is checking here
-
-        if (
-            payload
-            && typeof payload === "object"
-            && typeof payload.sub === "string"
-            && typeof payload.name === "string"
-            && typeof payload.iat === "number"
-            && typeof payload.exp === "number"
-            && payload.sub === "admin"
-        ) {
-            return payload.name;
-        }
-
-        throw new Error("Unauthorized");
-
-    } catch (e) {
-        throw new APIError((e as Error).message || "Unauthorized", 401);
-    }
-}
-
-async function getSongs(): Promise<Song[]> {
-    const songs: Song[] = [];
-    const filesSongs = await readdir(dirSongs, "utf8");
-    for (const file of filesSongs) {
-        const { name, ext } = parse(file);
-        if (ext !== ".md") {
-            continue;
-        }
-
-        const filePath = resolve(dirSongs, file);
-        const content = await readFile(filePath, "utf8");
-        const statFile = await stat(filePath);
-
-        const { title, artist, rating } = parseSong(content);
-
-        if (title && artist) {
-            songs.push({ file: name, type: "song", title, artist, rating, lastModified: statFile.mtime.toISOString() });
-        } else {
-            console.log("ERROR FILE:", file);
-        }
-    }
-
-    const filesPoems = await readdir(dirPoems, "utf8");
-    for (const file of filesPoems) {
-        const { name, ext } = parse(file);
-        if (ext !== ".md") {
-            continue;
-        }
-
-        const filePath = resolve(dirPoems, file);
-        const content = await readFile(filePath, "utf8");
-        const statFile = await stat(filePath);
-
-        const bookTitle = getLine("#", content);
-        const artist = getLine("@", content);
-
-        if (!(bookTitle && artist)) {
-            console.log("ERROR FILE:", file);
-            continue;
-        }
-
-        const poems = content.split("##").slice(1);
-        for (const poem of poems) {
-            let title = poem.split("\n")[0].trim();
-            if (title) {
-                if (title === "...") {
-                    title = poem.split("\n")[1].trim();
-                }
-                songs.push({
-                    file: name,
-                    type: "poem",
-                    title,
-                    artist,
-                    bookTitle,
-                    rating: 0,
-                    lastModified: statFile.mtime.toISOString(),
-                });
-            }
-        }
-    }
-
-    return songs;
-}
-
-function getLine(symbol: string, content: string): null | string {
-    for (const line of content.split("\n")) {
-        if (line.startsWith(symbol)) {
-            return line.substring(symbol.length).trim();
-        }
-    }
-    return null;
-}
+// Start listening for incoming requests.
+app.listen(PORT, () => {
+    console.log(`Server is running on ${LOCALHOST}`);
+});
