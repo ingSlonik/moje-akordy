@@ -228,7 +228,17 @@ export default function Admin({ path }: AdminProps) {
             {}
 
             <div className="admin-footer">
-                <span>easy-starter v2.2.0</span>
+                <span>
+                    easy-starter v2.2.0 • Vyrobil{" "}
+                    <a
+                        href="https://paulu.cz/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="admin-author-link"
+                    >
+                        Filip (paulu.cz)
+                    </a>
+                </span>
             </div>
         </div>
     );

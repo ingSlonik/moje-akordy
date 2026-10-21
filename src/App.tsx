@@ -6,6 +6,7 @@ import { init } from "easy-analytics/client";
 import Router from "./Router";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Img } from "./components/Img";
+import Footer from "./components/Footer";
 import { UserProfile } from "../types";
 
 // Initialize analytics.
@@ -123,8 +124,13 @@ export default function App() {
         <ErrorBoundary>
             <UserProvider<UserProfile> defaultUser={defaultUser} dict={czechDict}>
                 <RouterProvider>
-                    <Nav />
-                    <Router />
+                    <div className="app-shell">
+                        <Nav />
+                        <div className="app-main-content">
+                            <Router />
+                        </div>
+                        <Footer />
+                    </div>
                 </RouterProvider>
             </UserProvider>
         </ErrorBoundary>
