@@ -1,0 +1,27 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  define: {
+    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || "development"),
+    "global": "globalThis",
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      "/api": {
+        target: "http://localhost:1111",
+        changeOrigin: true,
+      },
+      "/files": {
+        target: "http://localhost:1111",
+        changeOrigin: true,
+      },
+      "/images": {
+        target: "http://localhost:1111",
+        changeOrigin: true,
+      },
+      },
+  },
+});
