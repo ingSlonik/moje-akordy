@@ -1,0 +1,130 @@
+# AI Coding Assistant Guidelines & Project Rules
+
+You are an expert AI software engineer pair-programming in a fullstack React application bootstrapped with `easy-starter`.
+Follow these strict rules, project structures, and conventions at all times.
+
+---
+
+## 1. API Architecture & Type Safety (`typed-client-server-api`)
+
+All React-to-Express communication must use the RPC contract defined in `types.ts` via the `API` type (`APIDefinition`).
+
+### Naming Conventions for Endpoints
+EVERY endpoint name in `API` **MUST** start with exactly one of the following prefixes:
+* `add...` (Create/Insert operations. Example: `addItem`, `addRecord`)
+* `get...` (Read/Query operations. Example: `getItems`, `getItem`, `getAnalytics`)
+* `update...` (Update/Edit operations. Example: `updateItem`, `updateUser`)
+* `remove...` (Delete/Remove operations. Example: `removeItem`, `removePost`)
+
+**CRITICAL**: Do NOT use other prefixes (e.g., `create`, `delete`, `post`, `fetch`, `save`).
+
+### Frontend API Invocation Methods
+You have exactly three (3) methods to trigger API endpoints on the frontend. Use them strictly according to these boundaries:
+
+| Method | Import | Use Case | Pattern / Example |
+| :--- | :--- | :--- | :--- |
+| **`useSSRApi`** | `import { useSSRApi } from "../services/api";` | **ONLY** inside React components during initial SSR render. Enables server-side rendering and hydration without flash-of-loading or spinners. | `const [items, error, isLoading, reload] = useSSRApi.getItems({});` |
+| **`useApi`** | `import { useApi } from "../services/api";` | **ONLY** inside React components for client-side-only reactive data fetching (e.g., late loaded components). | `const [items, error, isLoading, reload] = useApi.getItems({});` |
+| **`api`** | `import { api } from "../services/api";` | **ONLY** inside event handlers (e.g., `onClick`, `onSubmit`), utility/non-React functions, or async triggers. Returns a Promise resolving to `[data, error]`. | `const [newId, err] = await api.addItem({ name: "Foo" });` |
+
+**NEVER** use standard `fetch`, `axios`, or any other fetcher libraries for internal API calls.
+
+---
+
+## 2. Routing & Navigation (`easy-page-router`)
+
+This project uses `easy-page-router`, a lightweight, universal routing library.
+
+### Route Configurations
+* Router paths are defined in `src/Router.tsx` within the `renderPage({ path })` callback of the `Router` component.
+* The `path` parameter is a string array (`string[]`) of URL segments:
+  * `/` -> `path.length === 0`
+  * `/admin` -> `path[0] === "admin"`
+  * `/users/123` -> `path[0] === "users" && path[1]` (where `path[1]` is the user ID segment).
+
+### Navigation
+1. **Declarative Navigation**: Use `<Link href="/path">Text</Link>` imported from `"easy-page-router/react"`.
+2. **Programmatic Navigation**: Destructure `push` from the `useRouter()` hook imported from `"easy-page-router/react"`.
+
+```tsx
+import { Link, useRouter } from "easy-page-router/react";
+
+// Declarative:
+<Link href="/admin">Go to Admin</Link>
+
+// Programmatic:
+const { push } = useRouter();
+const onSubmit = async () => {
+    await saveSomething();
+    push("/dashboard");
+};
+```
+
+---
+
+## 3. Database Operations (`easy-db-node`)
+
+The local database stores records as JSON files.
+
+### Schema Definition
+* The database collections/tables must be structured and typed in `types.ts` inside the exported `Database` type.
+```typescript
+export type Database = {
+    item: Item;
+    user: User;
+};
+```
+
+### Writing to Database
+* **Auto-generated ID (Standard Insertion)**:
+  * Use `insert(table, data)`.
+  * **Rule**: Do **NOT** pass `_id` in the input data. `easy-db-node` ignores any `_id` property passed to `insert()` and automatically generates and returns the unique string ID.
+  ```typescript
+  // CORRECT:
+  const newId = await insert("item", { name: "Hello", value: 10 });
+  ```
+
+* **Custom / Specific ID (Explicit Key)**:
+  * To insert or overwrite a record with a **specific/predefined ID**, you **MUST** use `update(table, id, data)` instead of `insert`.
+  ```typescript
+  // CORRECT (custom ID):
+  await update("item", "explicit-custom-id", { name: "Custom ID Item", value: 99 });
+  ```
+
+---
+
+## 4. Styling & Image Manipulation Guidelines
+
+### CSS Implementation
+* **Centralized & Generic**: Implement as many styles as possible in `src/styles.css` using generic, reusable selectors.
+* **Minimize Inline Styles**: Avoid inline styles (e.g., `style={{ ... }}`) in React components. Keep style declarations in the central CSS file to maintain design consistency and code quality.
+
+### Image Asset Handling (`easy-image-resizer` & `<Img />` Component)
+* **Dynamic Image Resizing via Express Middleware (`easy-image-resizer`):**
+  - All image assets (logos, icons, banners) must be placed inside `/public` (e.g. `/public/images/icon.png`).
+  - Request dynamically resized, cropped, or format-converted images on the fly via URL query parameters in CSS `url()` or via `<Img />` component props.
+  - **CORRECT (CSS):**
+    ```css
+    .hero-banner {
+        background-image: url("/images/hero.png?w=1200&format=webp&q=85");
+    }
+    ```
+* **JavaScript Imports for Images are Forbidden:**
+  - Do **NOT** import image assets inside `.js`, `.ts`, or `.tsx` files (e.g. do NOT write `import hero from "./hero.jpg"`).
+* **Use `<Img />` Component for Images in React TSX (Do NOT use standard `<img>` tags):**
+  - When displaying images inside React TSX components, **always use the `<Img />` component** imported from `../components/Img` (or `./components/Img`) instead of native HTML `<img>` tags.
+  - The `<Img />` component automatically sets default format to `"webp"` and constructs resizer query parameters.
+  - Supported props on `<Img />`:
+    - `src`: Original path to image inside `/public` (e.g. `"/images/icon.png"`)
+    - `w` or `width`: Target width (px)
+    - `h` or `height`: Target height (px)
+    - `mw` or `maxWidth`: Maximum width (px)
+    - `mh` or `maxHeight`: Maximum height (px)
+    - `format` or `type`: `"webp"` (default), `"jpeg"`, or `"png"`
+    - `q` or `quality`: 1 to 100
+  - **CORRECT (TSX):**
+    ```tsx
+    import { Img } from "../components/Img";
+
+    <Img src="/images/logo.png" w={300} h={100} alt="Application Logo" />
+    ```
