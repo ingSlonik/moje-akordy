@@ -1,19 +1,27 @@
+import React from "react";
 import { Link } from "easy-page-router/react";
-import { useHead } from "../../services/common";
+import { useHead } from "../services/common";
 
-export default function NotFoundPage() {
+export default function NotFound() {
     useHead({
-        title: "Píseň nenalezena | Fílův zpěvník",
-        description: "Osobní zpěvník Fíly! Obsahuje jak písně s akordy, tak proložení básničkami. Je úplně bez reklam a má i boží auto scroll!"
+        title: "404 - Stránka nenalezena | Fílův zpěvník",
+        description: "Požadovaná píseň nebo stránka nebyla nalezena.",
     });
 
     return (
-        <main>
+        <main className="page-not-found">
             <div className="content">
-                <h1>404 | Píseň nenalezena</h1>
-                <p>
-                    <Link to="/">Seznam písní</Link>
-                </p>
+                <div className="not-found-card">
+                    <span className="not-found-code">404</span>
+                    <h1>Tuhle píseň ještě nikdo nesložil...</h1>
+                    <p>
+                        Zdá se, že stránka, kterou hledáte, se někde zatoulala. Zkuste se podívat do seznamu
+                        všech písní a básní na úvodní stránce.
+                    </p>
+                    <Link href="/" className="btn-primary btn-home">
+                        ← Zpět na úvodní stránku
+                    </Link>
+                </div>
             </div>
         </main>
     );

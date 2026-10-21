@@ -1,39 +1,51 @@
-import { useSSRHook } from "ssr-hook";
-
+import React from "react";
 import NextSong from "../components/NextSong";
-import { useHead } from "../../services/common";
+import { useHead } from "../services/common";
+import { useSSRApi } from "../services/api";
 
-import { PoemDetail } from "../../types";
+export type PoemPageProps = {
+    file: string;
+    title: string;
+};
 
+export default function PoemPage({ file, title }: PoemPageProps) {
+    const decodedFile = decodeURIComponent(file);
+    const decodedTitle = decodeURIComponent(title);
 
-export default function PoemPage({ file, title }: { file: string; title: string }) {
+    const [poem, error, isLoading] = useSSRApi.getPoem({ file: decodedFile, title: decodedTitle });
 
-    const [poem, error, isLoading, reload] = useSSRHook<PoemDetail>(`/api/poem?file=${decodeURIComponent(file)}&title=${decodeURIComponent(title)}`);
-
-    const pageTitle = (poem && !(poem instanceof Error))
+    const pageTitle = poem
         ? `${poem.title} - ${poem.artist} (${poem.bookTitle}) | Fílův zpěvník`
-        : "Fílův zpěvník";
+        : "Báseň | Fílův zpěvník";
 
     useHead({
-        title,
-        description: poem ? `${poem.title} - ${poem.artist} (${poem.bookTitle}) \n${poem.text.slice(0, 100)}` : pageTitle,
-    })
+        title: pageTitle,
+        description: poem
+            ? `${poem.title} - ${poem.artist} (${poem.bookTitle})\n${poem.text.slice(0, 100)}`
+            : pageTitle,
+    });
 
     return (
         <>
-            <main>
+            <main className="page-poem">
                 <div className="content">
-                    {isLoading && <p>Otevírám knihu a načítám báseň...</p>}
-                    {error && <p className="error">{error.message}</p>}
-                    {poem && <>
-                        <h1 className="title">{poem.title}</h1>
-                        <div className="book-title">{poem.bookTitle}</div>
-                        <h2 className="artist">{poem.artist}</h2>
+                    {isLoading && <p className="loading-state">Otevírám sbírku a načítám báseň...</p>}
+                    {error && <p className="error-state">{error.message}</p>}
+                    {poem && (
+                        <article className="poem-card">
+                            <h1 className="title">{poem.title}</h1>
+                            {poem.bookTitle && <div className="book-title">{poem.bookTitle}</div>}
+                            <h2 className="artist">{poem.artist}</h2>
 
-                        <p className="song">
-                            {poem.text}
-                        </p>
-                    </>}
+                            <div className="poem-meta">
+                                <span className="author-badge">
+                                    Přidal: <strong>{poem.authorName || "Fíla"}</strong>
+                                </span>
+                            </div>
+
+                            <p className="poem-body">{poem.text}</p>
+                        </article>
+                    )}
                 </div>
             </main>
             <NextSong type="song" />

@@ -1,36 +1,52 @@
-import { useRef } from "react";
-import { useTitle } from "easy-page-router/react";
-
+import React, { useRef } from "react";
 import Song from "../components/Song";
 import NextSong from "../components/NextSong";
 import AutoScroll from "../components/AutoScroll";
-import { useHead } from "../../services/common";
-import { useSSRHook } from "ssr-hook";
-import { SongDetail } from "../../types";
+import { useHead } from "../services/common";
+import { useSSRApi } from "../services/api";
 
-export default function SongPage({ file }: { file: string }) {
+export type SongPageProps = {
+    file: string;
+};
+
+export default function SongPage({ file }: SongPageProps) {
     const refScroll = useRef<HTMLDivElement>(null);
+    const decodedFile = decodeURIComponent(file);
 
-    const [song, error, isLoading, reload] = useSSRHook<SongDetail>(`/api/song?file=${decodeURIComponent(file)}`);
+    const [song, error, isLoading, reload] = useSSRApi.getSong({ file: decodedFile });
 
-    const title = (song && !(song instanceof Error))
+    const pageTitle = song
         ? `${song.title} - ${song.artist} | Fílův zpěvník`
-        : "Fílův zpěvník";
+        : "Píseň | Fílův zpěvník";
 
-    useTitle(title);
+    const description = song
+        ? `${song.title} - ${song.artist}\n${song.text.filter(t => t.type === "text").map(t => t.value).join("").slice(0, 120)}`
+        : pageTitle;
+
     useHead({
-        title,
-        description: song ? `${song.title} - ${song.artist} \n${song.text.map(t => t.type === "text" ? t.value : "").join("").slice(0, 100)}` : title,
-    })
+        title: pageTitle,
+        description,
+    });
 
     return (
         <>
-            {song && <AutoScroll speed={song.scrollSpeed} refScroll={refScroll} />}
-            <main ref={refScroll}>
+            {song && song.scrollSpeed > 0 && (
+                <AutoScroll
+                    key={song.file}
+                    speed={song.scrollSpeed}
+                    refScroll={refScroll}
+                />
+            )}
+            <main ref={refScroll} className="page-song">
                 <div className="content">
-                    {isLoading && <p>Ladím kytaru a načítám píseň...</p>}
-                    {error && <p className="error">{error.message}</p>}
-                    {song && <Song {...song} />}
+                    {isLoading && <p className="loading-state">Ladím kytaru a načítám píseň...</p>}
+                    {error && <p className="error-state">{error.message}</p>}
+                    {song && (
+                        <Song
+                            {...song}
+                            onRatingChange={() => reload()}
+                        />
+                    )}
                 </div>
             </main>
             <NextSong type="poem" />
