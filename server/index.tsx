@@ -1,5 +1,6 @@
 import { resolve } from "path";
 import { readFile } from "fs/promises";
+import { createHmac } from "crypto";
 
 import cors from "cors";
 import express from "express";
@@ -21,8 +22,17 @@ import {
     SongRecord,
     PoemDetail,
     PoemRecord,
+    LiveTarget,
 } from "../types";
 import { tokenizeSongContent, slugifySongId } from "../src/utils/parser";
+import {
+    LIVE_KEYS,
+    LIVE_CODE_ALPHABET,
+    LIVE_CODE_LENGTH,
+    isSameLiveTarget,
+    isValidLiveCode,
+    normalizeLiveCode,
+} from "../src/utils/live";
 import { expressImageResizer } from "easy-image-resizer";
 import App from "../src/App";
 
@@ -220,6 +230,20 @@ function resolveSongRating(song: SongRecord, userId?: string | null): number {
         return 0;
     }
     return song.defaultRating ?? 0;
+}
+
+/**
+ * Public live code of a user. Derived from userId (nothing is stored), but not guessable
+ * from it - userId is public (authorId, ratings keys), so using it directly would let anyone
+ * watch what any logged-in user is browsing.
+ */
+function getLiveCodeForUser(userId: string): string {
+    const digest = createHmac("sha256", JWT_SECRET!).update(`live:${userId}`).digest();
+    let code = "";
+    for (let i = 0; i < LIVE_CODE_LENGTH; i++) {
+        code += LIVE_CODE_ALPHABET[digest[i] % LIVE_CODE_ALPHABET.length];
+    }
+    return code;
 }
 
 // --------------------------------- API ---------------------------------------
@@ -537,12 +561,71 @@ setAPIBackend<API>(app, {
         await update("user", userId, targetUser);
         return true;
     },
+
+    async getLiveCode(_params, req, res) {
+        const session = await authServer.checkLogin(req!, res!);
+        return { code: getLiveCodeForUser(session.userId) };
+    },
+
+    async updateLiveState({ type, file, title, key }, req, res) {
+        const session = await authServer.checkLogin(req!, res!);
+
+        let target: LiveTarget;
+        let label: string;
+        if (type === "song") {
+            const song = file ? await select("song", file) : null;
+            if (!file || !song) {
+                throw new APIError("Píseň nebyla nalezena", 404);
+            }
+            target = { type, file };
+            if (key && LIVE_KEYS.includes(key)) target.key = key;
+            label = `${song.title} – ${song.artist}`;
+        } else if (type === "poem") {
+            const poems = await selectArray("poem");
+            const poem = file && title ? poems.find((p) => p.bookSlug === file && p.title === title) : null;
+            if (!file || !title || !poem) {
+                throw new APIError("Báseň nebyla nalezena", 404);
+            }
+            target = { type, file, title };
+            label = poem.artist ? `${poem.title} – ${poem.artist}` : poem.title;
+        } else {
+            throw new APIError("Neplatný typ stránky", 400);
+        }
+
+        const code = getLiveCodeForUser(session.userId);
+        const existing = await select("live", code);
+        // Skip the disk write when nothing changed.
+        if (existing && isSameLiveTarget(existing, target)) return true;
+
+        const dbUser = await select("user", session.userId);
+        const leaderName = dbUser?.name || session.name || session.mail?.split("@")[0] || "Hudebník";
+
+        await update("live", code, {
+            ...target,
+            leaderName,
+            label,
+            updatedAt: new Date().toISOString(),
+        } as any);
+        return true;
+    },
+
+    async getLiveState({ code: rawCode }) {
+        // typed-client-server-api already sends "Cache-Control: no-cache".
+        const code = normalizeLiveCode(rawCode);
+        if (!isValidLiveCode(code)) {
+            throw new APIError("Neplatný kód živého hraní", 404);
+        }
+        const record = await select("live", code);
+        if (!record) return { live: null };
+        const { _id, ...live } = record;
+        return { live };
+    },
 });
 
 // --------------------------------- SEO ---------------------------------------
 app.get("/robots.txt", (_: express.Request, res: express.Response) => {
     res.type("text/plain");
-    res.send(`User-agent: *\nDisallow: /admin/\nAllow: /\n\nSitemap: ${ORIGIN}/sitemap.xml`);
+    res.send(`User-agent: *\nDisallow: /admin/\nDisallow: /live/\nAllow: /\n\nSitemap: ${ORIGIN}/sitemap.xml`);
 });
 
 app.get("/sitemap.xml", async (_: express.Request, res: express.Response) => {

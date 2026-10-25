@@ -50,10 +50,17 @@ describe("Songbook E2E Integration Test Suite", () => {
 
     let songJsonOriginal: string;
     let userJsonOriginal: string | null = null;
+    const liveJsonPath = path.resolve(easyDbDir, "live.json");
+    let liveJsonOriginal: string | null = null;
 
     before(async () => {
         // 1. In-memory backup of production/dev database files
         songJsonOriginal = await fs.readFile(songJsonPath, "utf-8");
+        try {
+            liveJsonOriginal = await fs.readFile(liveJsonPath, "utf-8");
+        } catch {
+            liveJsonOriginal = null;
+        }
         try {
             userJsonOriginal = await fs.readFile(userJsonPath, "utf-8");
         } catch {
@@ -136,6 +143,15 @@ describe("Songbook E2E Integration Test Suite", () => {
         // 3. Remove any test easy-db-backup folder if created
         try {
             await fs.rm(backupDir, { recursive: true, force: true });
+        } catch {}
+
+        // 4. Restore / remove live follow collection
+        try {
+            if (liveJsonOriginal !== null) {
+                await fs.writeFile(liveJsonPath, liveJsonOriginal, "utf-8");
+            } else {
+                await fs.rm(liveJsonPath, { force: true });
+            }
         } catch {}
     });
 
@@ -475,6 +491,8 @@ describe("Songbook E2E Integration Test Suite", () => {
         const homeHtml = await homeRes.text();
         assert.ok(homeHtml.includes("<title>Fílův zpěvník</title>"), "Home HTML must include page title");
         assert.ok(homeHtml.includes("Čmelák"), "Home HTML must include song list rendered via SSR");
+        assert.ok(homeHtml.includes("live-home-card"), "Home HTML must include the live mode card");
+        assert.ok(homeHtml.includes("nav-btn-live"), "Navigation must include the live button");
 
         // 8b. GET /bill-cmelak
         const songRes = await fetch(`${BASE_URL}/bill-cmelak`);
@@ -499,5 +517,84 @@ describe("Songbook E2E Integration Test Suite", () => {
         const robotsTxt = await robotsRes.text();
         assert.ok(robotsTxt.includes("User-agent: *"));
         assert.ok(robotsTxt.includes("Sitemap:"));
+    });
+
+    // -------------------------------------------------------------------------
+    // 9. Live follow (/live/<code>)
+    // -------------------------------------------------------------------------
+    it("9. Live follow: leader publishes current song, follower reads it, SSR renders /live/<code>", async () => {
+        const authHeaders = {
+            "Content-Type": "application/json",
+            "Origin": BASE_URL,
+            "Cookie": cookieString(cookiesUserA),
+            "Authorization": `Bearer ${cookiesUserA.accessToken}`,
+        };
+        const putLive = (body: any, headers: Record<string, string> = authHeaders) =>
+            fetch(`${BASE_URL}/api/live-state`, { method: "PUT", headers, body: JSON.stringify(body) });
+        const getLive = async (code: string) => {
+            const res = await fetch(`${BASE_URL}/api/live-state?code=${encodeURIComponent(JSON.stringify(code))}`);
+            return { res, data: res.status === 200 ? await res.json() : null };
+        };
+
+        // 9a. Unauthenticated users have no live code and cannot publish
+        const anonCode = await fetch(`${BASE_URL}/api/live-code`);
+        assert.notEqual(anonCode.status, 200);
+        const anonPut = await putLive({ type: "song", file: "bill-cmelak" }, { "Content-Type": "application/json" });
+        assert.notEqual(anonPut.status, 200);
+
+        // 9b. Live code is stable and not equal to userId
+        const codeRes = await fetch(`${BASE_URL}/api/live-code`, { headers: authHeaders });
+        assert.equal(codeRes.status, 200);
+        const { code } = await codeRes.json();
+        assert.match(code, /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/);
+        const codeRes2 = await fetch(`${BASE_URL}/api/live-code`, { headers: authHeaders });
+        assert.equal((await codeRes2.json()).code, code, "Live code must be stable");
+
+        // 9c. Nothing published yet
+        const empty = await getLive(code);
+        assert.equal(empty.res.status, 200);
+        assert.equal(empty.data.live, null);
+
+        // 9d. Invalid targets are rejected
+        assert.equal((await putLive({ type: "song", file: "neexistujici-pisen" })).status, 404);
+        assert.equal((await putLive({ type: "poem", file: "jako-cool-v-plote", title: "Neexistuje" })).status, 404);
+        assert.equal((await putLive({ type: "hack", file: "bill-cmelak" })).status, 400);
+
+        // 9e. Publish song with transposition, follower sees it (invalid key is dropped)
+        assert.equal((await putLive({ type: "song", file: "bill-cmelak", key: "G" })).status, 200);
+        let state = await getLive(code);
+        assert.equal(state.res.headers.get("cache-control"), "no-cache");
+        assert.equal(state.data.live.type, "song");
+        assert.equal(state.data.live.file, "bill-cmelak");
+        assert.equal(state.data.live.key, "G");
+        assert.equal(state.data.live.leaderName, "Muzikant A");
+        assert.equal(state.data.live.label, "Čmelák – Divokej Bill");
+
+        // Code typed by hand (lowercase, with space) resolves to the same session
+        const typed = await getLive(code.slice(0, 3).toLowerCase() + " " + code.slice(3).toLowerCase());
+        assert.equal(typed.res.status, 200);
+        assert.equal(typed.data.live.file, "bill-cmelak");
+        assert.equal(state.data.live._id, undefined);
+
+        await putLive({ type: "song", file: "bill-cmelak", key: "<script>" });
+        state = await getLive(code);
+        assert.equal(state.data.live.key, undefined, "Invalid key must not be stored");
+
+        // 9f. SSR renders the leader's song on the follower page
+        const ssrRes = await fetch(`${BASE_URL}/live/${code.toLowerCase()}`);
+        assert.equal(ssrRes.status, 200);
+        const ssrHtml = await ssrRes.text();
+        assert.ok(ssrHtml.includes("Čmelák"), "Live SSR must render the current song");
+        assert.ok(ssrHtml.includes("Muzikant A"), "Live SSR must show the leader name");
+
+        // 9g. Switching to a poem
+        assert.equal((await putLive({ type: "poem", file: "jako-cool-v-plote", title: "Radostné vyhlídky" })).status, 200);
+        state = await getLive(code);
+        assert.equal(state.data.live.type, "poem");
+        assert.equal(state.data.live.title, "Radostné vyhlídky");
+
+        // 9h. Malformed code is 404
+        const bad = await getLive("../user");
+        assert.equal(bad.res.status, 404);
     });
 });
