@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useRouter } from "easy-page-router/react";
 import { useUser } from "easy-user-auth/react";
 import Ranking, { getEffectiveSongRating } from "./Ranking";
 import ShareModal from "./ShareModal";
 import { api } from "../services/api";
+import { SONG_KEY_CHANGE_EVENT } from "../utils/live";
 import { SongDetail, SongToken, UserProfile } from "../../types";
 
 const chords = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
@@ -11,6 +12,8 @@ const chords = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "B", "H"];
 export type SongProps = SongDetail & {
     onRatingChange?: (newRating: number) => void;
     showActions?: boolean;
+    /** Live follow mode: transposition comes from the leader, URL is not touched. */
+    live?: { key?: string };
 };
 
 export default function Song(props: SongProps) {
@@ -23,6 +26,7 @@ export default function Song(props: SongProps) {
         authorName,
         onRatingChange,
         showActions = true,
+        live,
     } = props;
 
     const { searchParams } = useRouter();
@@ -38,7 +42,7 @@ export default function Song(props: SongProps) {
 
     // Honor initial key from URL parameter (?key=... or ?chord=...) if present
     const initialChord = (() => {
-        const paramKey = searchParams?.key || searchParams?.chord;
+        const paramKey = live ? live.key : (searchParams?.key || searchParams?.chord);
         if (paramKey && chords.includes(paramKey)) {
             return paramKey;
         }
@@ -47,8 +51,16 @@ export default function Song(props: SongProps) {
 
     const [transposition, setTransposition] = useState(initialChord);
 
+    // Live follow: leader changed the transposition.
+    const liveKey = live?.key;
+    useEffect(() => {
+        if (live) setTransposition(initialChord);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [liveKey]);
+
     function handleTranspositionChange(newChord: string) {
         setTransposition(newChord);
+        if (live) return;
         if (typeof window !== "undefined" && window.history) {
             try {
                 const url = new URL(window.location.href);
@@ -60,6 +72,8 @@ export default function Song(props: SongProps) {
                 }
                 const newPath = url.pathname + (url.search ? url.search : "");
                 window.history.replaceState(null, "", newPath);
+                // Router does not see replaceState, notify live broadcasting explicitly.
+                window.dispatchEvent(new Event(SONG_KEY_CHANGE_EVENT));
             } catch {
                 // Ignore URL parsing errors
             }

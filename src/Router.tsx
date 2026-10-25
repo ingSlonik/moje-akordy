@@ -7,6 +7,7 @@ import PoemPage from "./pages/Poem";
 import Editor from "./pages/Editor";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import LivePage from "./pages/Live";
 
 const Admin = lazy(() => import("./pages/admin/Admin"));
 
@@ -34,6 +35,10 @@ export default function AppRouter() {
                                 <Admin path={path} />
                             </Suspense>
                         );
+                    }
+
+                    if (path[0] === "live" && path[1]) {
+                        return <LivePage code={path[1]} />;
                     }
 
                     if (path[0] === "editor") {

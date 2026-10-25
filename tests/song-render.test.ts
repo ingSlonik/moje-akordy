@@ -72,18 +72,23 @@ describe("Song Component & Share Feature Rendering", () => {
 
     it("renders ShareModal dialog structure when open", () => {
         const html = renderToString(
-            React.createElement(ShareModal, {
-                isOpen: true,
-                onClose: () => {},
-                file: "bill-cmelak",
-                title: "Čmelák",
-                artist: "Divokej Bill",
-                currentKey: "G",
-                defaultKey: "C",
-            })
+            React.createElement(
+                UserProvider,
+                { defaultUser, dict: {} as any },
+                React.createElement(ShareModal, {
+                    isOpen: true,
+                    onClose: () => {},
+                    file: "bill-cmelak",
+                    title: "Čmelák",
+                    artist: "Divokej Bill",
+                    currentKey: "G",
+                    defaultKey: "C",
+                })
+            )
         );
 
         assert.ok(html.includes("share-dialog"));
+        assert.ok(html.includes("Živé hraní"));
         assert.ok(html.includes("share-qr-canvas"));
         assert.ok(html.includes("btn-share-main"));
         assert.ok(html.includes("btn-share-icon"));

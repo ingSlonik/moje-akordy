@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import SongTable from "../components/SongTable";
+import LiveHomeCard from "../components/LiveHomeCard";
 import { useSSRApi } from "../services/api";
 import { useHead } from "../services/common";
 
@@ -21,6 +22,8 @@ export default function Index() {
                         Můj osobní hudební společník bez reklam. Skvělý k táboráku i na domácí trénink!
                     </p>
                 </div>
+
+                <LiveHomeCard />
 
                 <div className="intro-card">
                     <div className={`intro-wrapper ${showIntro ? "expanded" : "collapsed"}`}>

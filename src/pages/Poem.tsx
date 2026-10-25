@@ -7,9 +7,11 @@ import { useSSRApi } from "../services/api";
 export type PoemPageProps = {
     file: string;
     title: string;
+    /** Live follow mode (rendered inside /live/<code>). */
+    live?: boolean;
 };
 
-export default function PoemPage({ file, title }: PoemPageProps) {
+export default function PoemPage({ file, title, live }: PoemPageProps) {
     const [isShareOpen, setIsShareOpen] = useState(false);
     const decodedFile = decodeURIComponent(file);
     const decodedTitle = decodeURIComponent(title);
@@ -84,7 +86,7 @@ export default function PoemPage({ file, title }: PoemPageProps) {
                     )}
                 </div>
             </main>
-            <NextSong type="song" />
+            {!live && <NextSong type="song" />}
         </>
     );
 }

@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { renderQRCodeWithLogo } from "../utils/qr";
 import { buildShareUrl, canUseWebShare, getShareText } from "../utils/share";
+import LiveIcon from "./LiveIcon";
+import LiveBroadcastPanel from "./LiveBroadcastPanel";
+import { useLiveDialog } from "./LiveDialog";
 
 export interface ShareModalProps {
     isOpen: boolean;
@@ -28,6 +31,9 @@ export default function ShareModal({
     const [includeKey, setIncludeKey] = useState<boolean>(isTransposed);
     const [copied, setCopied] = useState<boolean>(false);
     const [canShare, setCanShare] = useState<boolean>(false);
+    const [mode, setMode] = useState<"page" | "live">("page");
+    const isLive = mode === "live";
+    const { requestLiveLogin } = useLiveDialog();
 
     useEffect(() => {
         if (isTransposed) {
@@ -97,7 +103,7 @@ export default function ShareModal({
 
     // Render QR Code onto canvas whenever modal opens or shareUrl changes
     useEffect(() => {
-        if (!isOpen || !canvasRef.current) return;
+        if (!isOpen || isLive || !canvasRef.current) return;
 
         let isCancelled = false;
 
@@ -113,7 +119,7 @@ export default function ShareModal({
         return () => {
             isCancelled = true;
         };
-    }, [isOpen, shareUrl]);
+    }, [isOpen, isLive, shareUrl]);
 
     async function handleCopy() {
         try {
@@ -157,8 +163,7 @@ export default function ShareModal({
     return (
         <dialog
             ref={dialogRef}
-            // @ts-expect-error closedby is a modern dialog attribute
-            closedby="any"
+            {...({ closedby: "any" } as any)}
             aria-labelledby="share-dialog-title"
             className="share-dialog"
         >
@@ -166,7 +171,7 @@ export default function ShareModal({
                 <header className="share-dialog-header">
                     <div className="share-dialog-header-text">
                         <h3 id="share-dialog-title" className="share-dialog-title">
-                            Sdílet píseň
+                            {isLive ? "Živé hraní" : "Sdílet píseň"}
                         </h3>
                         <p className="share-dialog-subtitle">
                             {title} <span className="subtitle-sep">•</span> {artist}
@@ -195,6 +200,44 @@ export default function ShareModal({
                 </header>
 
                 <div className="share-dialog-body">
+                    <div className="share-tabs" role="tablist" aria-label="Co sdílet">
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={!isLive}
+                            className={`share-tab ${!isLive ? "active" : ""}`}
+                            onClick={() => setMode("page")}
+                        >
+                            Jen tuto píseň
+                        </button>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={isLive}
+                            className={`share-tab share-tab-live ${isLive ? "active" : ""}`}
+                            onClick={() => setMode("live")}
+                        >
+                            <LiveIcon size={16} on={isLive} /> Živé hraní
+                        </button>
+                    </div>
+
+                    {isLive && (
+                        <>
+                            <p className="share-live-explain">
+                                Ostatní uvidí vždy tu píseň, kterou máte zrovna otevřenou.
+                            </p>
+                            <LiveBroadcastPanel
+                                active={isOpen && isLive}
+                                onLoginRequest={() => {
+                                    // Close this modal first, the shared live dialog reopens after login.
+                                    onClose();
+                                    requestLiveLogin();
+                                }}
+                            />
+                        </>
+                    )}
+
+                    {!isLive && (<>
                     {/* Compact QR Code Section - Direct canvas without outer card frame */}
                     <div className="share-qr-section">
                         <canvas
@@ -292,6 +335,7 @@ export default function ShareModal({
                             </>
                         )}
                     </button>
+                    </>)}
                 </div>
             </div>
         </dialog>

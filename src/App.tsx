@@ -7,6 +7,9 @@ import Router from "./Router";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Img } from "./components/Img";
 import Footer from "./components/Footer";
+import LiveBroadcaster from "./components/LiveBroadcaster";
+import LiveNavButton from "./components/LiveNavButton";
+import { LiveDialogProvider } from "./components/LiveDialog";
 import { UserProfile } from "../types";
 
 // Initialize analytics.
@@ -65,7 +68,9 @@ function Nav() {
                 </Link>
 
                 <div className="nav-actions">
-                    <Link href="/editor" className="nav-link nav-btn-editor">
+                    <LiveNavButton />
+
+                    <Link href="/editor" className="nav-link nav-btn-editor" title="Přidat / Upravit písně">
                         <svg
                             width="16"
                             height="16"
@@ -80,7 +85,7 @@ function Nav() {
                             <path d="M12 5v14" />
                             <path d="M5 12h14" />
                         </svg>
-                        Přidat / Upravit písně
+                        <span className="nav-label">Přidat / Upravit písně</span>
                     </Link>
 
                     {isLoggedIn && user?.role === "admin" && (
@@ -124,13 +129,16 @@ export default function App() {
         <ErrorBoundary>
             <UserProvider<UserProfile> defaultUser={defaultUser} dict={czechDict}>
                 <RouterProvider>
-                    <div className="app-shell">
-                        <Nav />
-                        <div className="app-main-content">
-                            <Router />
+                    <LiveDialogProvider>
+                        <LiveBroadcaster />
+                        <div className="app-shell">
+                            <Nav />
+                            <div className="app-main-content">
+                                <Router />
+                            </div>
+                            <Footer />
                         </div>
-                        <Footer />
-                    </div>
+                    </LiveDialogProvider>
                 </RouterProvider>
             </UserProvider>
         </ErrorBoundary>

@@ -7,9 +7,11 @@ import { useSSRApi } from "../services/api";
 
 export type SongPageProps = {
     file: string;
+    /** Live follow mode (rendered inside /live/<code>). */
+    live?: { key?: string };
 };
 
-export default function SongPage({ file }: SongPageProps) {
+export default function SongPage({ file, live }: SongPageProps) {
     const refScroll = useRef<HTMLDivElement>(null);
     const decodedFile = decodeURIComponent(file);
 
@@ -44,12 +46,13 @@ export default function SongPage({ file }: SongPageProps) {
                     {song && (
                         <Song
                             {...song}
+                            live={live}
                             onRatingChange={() => reload()}
                         />
                     )}
                 </div>
             </main>
-            <NextSong type="poem" />
+            {!live && <NextSong type="poem" />}
         </>
     );
 }
