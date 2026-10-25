@@ -118,6 +118,31 @@ export type PoemDetail = {
     text: string;
 };
 
+/** What a logged-in user is currently looking at (target for live followers). */
+export type LiveTarget = {
+    type: "song" | "poem";
+    file: string;
+    /** Poem title (second URL segment), only for poems. */
+    title?: string;
+    /** Song transposition, e.g. "G". */
+    key?: string;
+};
+
+/** Stored in `live` collection, `_id` = public live code derived from userId. */
+export type LiveRecord = LiveTarget & {
+    _id: string;
+    leaderName: string;
+    /** Human readable name of the page, e.g. "Čmelák – Divokej Bill". */
+    label?: string;
+    updatedAt: string;
+};
+
+export type LiveState = LiveTarget & {
+    leaderName: string;
+    label?: string;
+    updatedAt: string;
+};
+
 export type API = APIDefinition<{
     getSongs: Endpoint<{}, Song[]>;
     getSong: Endpoint<{ file: string }, SongDetail>;
@@ -146,10 +171,15 @@ export type API = APIDefinition<{
     getEasyAnalyticsErrors: Endpoint<{ month: string }, any[]>;
     getUsers: Endpoint<{}, AdminUserItem[]>;
     updateUserRole: Endpoint<{ userId: string; role: "admin" | "user" }, boolean>;
+
+    getLiveCode: Endpoint<{}, { code: string }>;
+    updateLiveState: Endpoint<LiveTarget, boolean>;
+    getLiveState: Endpoint<{ code: string }, { live: LiveState | null }>;
 }>;
 
 export type Database = {
     song: SongRecord;
     poem: PoemRecord;
+    live: LiveRecord;
     user: UserDB<UserProfile>;
 };
