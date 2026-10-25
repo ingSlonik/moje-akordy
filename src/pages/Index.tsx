@@ -23,30 +23,31 @@ export default function Index() {
                     </p>
                 </div>
 
-                <LiveHomeCard />
-
                 <div className="intro-card">
                     <div className={`intro-wrapper ${showIntro ? "expanded" : "collapsed"}`}>
                         <p>
-                            Možná si říkáte, proč další web s písničkami a básničkami? Inu, pravda je taková, že jsem tak trochu hudební
-                            tragéd. Ne že bych vyloženě neuměl hrát, ale moje paměť na akordy je... řekněme... silně selektivní. A upřímně, už mě
-                            nebavilo lovit akordy po všech čertech a doufat, že budou napsané u všech slok (kdo si má pamatovat akordy
-                            napsané jen u té první, že?). Tak jsem se rozhodl vzít věci do vlastních rukou a vytvořit místo, kde najdu
-                            všechny své oblíbené písničky s akordy hezky pohromadě. A aby toho nebylo málo, přihodil jsem i pár svých
-                            oblíbených básniček, které mě vždycky dokážou rozesmát – nebo alespoň pohladit po alkoholem povzbuzené duši.
+                            Možná si říkáte, proč vznikl další web s písničkami a básničkami? Protože hraní s přáteli u táboráku
+                            nebo doma v obýváku má být hlavně o pohodě – ne o lovení akordů po všech čertech, zavírání otravných reklam
+                            a věčném hádání, co se vlastně hraje ve třetí sloce, když někdo vypsal akordy jen u té první. A tak jsem
+                            vzal věci do vlastních rukou a vytvořil čisté místo, kde jsou oblíbené písničky poctivě a přehledně
+                            zpracované od prvního hrábnutí do strun až po poslední refrén. A pro chvíle, kdy si prsty potřebují
+                            na moment odpočinout, tu najdete i sbírku básniček na rozesmání a dobrou náladu.
                         </p>
 
                         <p>
-                            Takže jestli hledáte inspiraci na táborák, párty nebo jen tak pro radost, jste tu správně. Ať už
-                            jste ostřílení muzikanti, nebo jako já bojujete s lehkou amnézií, tady se nemusíte bát žádných reklamních triků ani
-                            záludných vyskakovacích okének. Jen čistá radost z hudby, poezie a mých překlepů. A navíc s automatickým rolováním!
-                            Můžete se tak na 100 % soustředit na hraní a zpěv, místo abyste na někoho pořád řvali: „posuň to dolů... a TEĎ!“.
+                            Aby šlo hraní úplně samo, přidal jsem pár vychytávek, které v praxi ušetří spoustu nervů. Automatické
+                            rolování pohlídá text za vás, takže máte obě ruce volné na nástroj a nemusíte uprostřed nejlepšího sóla
+                            na nikoho zoufale křičet: „posuň to dolů... a TEĎ!“. Jedním kliknutím si navíc každou píseň transponujete
+                            do tóniny, která sedne vašim hlasivkám. A když se sejde celá parta, stačí zapnout <strong>Živé hraní</strong> –
+                            ostatní načtou QR kód a na mobilu se jim zpěvník otáčí sám přesně podle toho, co zrovna hrajete.
                         </p>
 
                         <p>
-                            A pokud náhodou narazíte na chybu v akordech, neváhejte mi dát vědět. Všechno je to tady pro vás – a hlavně
-                            pro mě, abych se už konečně naučil ty akordy pořádně a lidi si pak mysleli, že dovedu zahrát úplně všechno (ve
-                            skutečnosti ale zahraju jen to, co je v tomhle zpěvníku)!
+                            Zpěvník navíc neustále žije a roste. U písniček si můžete hvězdičkami označit, jak dobře je máte v malíčku,
+                            filtrovat si svůj repertoár nebo přes editor snadno přidat vlastní oblíbené kousky. A pokud náhodou
+                            narazíte na zatoulaný akord či překlep, dejte mi vědět nebo ho rovnou opravte. Ať už jste ostřílení muzikanti,
+                            nebo si prostě jen rádi zazpíváte v dobré společnosti, tenhle zpěvník je tu pro vás – bez reklam
+                            a ve správné tónině!
                         </p>
                     </div>
                     <button
@@ -57,6 +58,8 @@ export default function Index() {
                         {showIntro ? "Skrýt text" : "Číst dále..."}
                     </button>
                 </div>
+
+                <LiveHomeCard />
 
                 {isLoading && <p className="loading-state">Hledám zatoulané trsátko a načítám písně...</p>}
                 {error && <p className="error-state">Chyba načítání: {error.message}</p>}
